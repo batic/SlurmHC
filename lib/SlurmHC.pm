@@ -1,8 +1,10 @@
 package SlurmHC;
-use strict;
 
 BEGIN {
     use Exporter ();
+    use strict;
+    use Carp qw(carp);
+    
     use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     $VERSION     = '0.01';
     @ISA         = qw(Exporter);
@@ -13,23 +15,50 @@ BEGIN {
 }
 
 
-#################### subroutine header begin ####################
+#################### main pod documentation begin ###################
 
-=head2 sample_function
+=encoding utf8
 
- Usage     : How to use this function/method
- Purpose   : What it does
- Returns   : What it returns
- Argument  : What it wants to know
- Throws    : Exceptions and other anomolies
- Comment   : This is a sample subroutine header.
-           : It is polite to include more pod and fewer comments.
+=head1 NAME
 
-See Also   : 
+    SlurmHC - Slurm healtcheck tests module for signet cluster 
+
+=head1 SYNOPSIS
+
+    use SlurmHC;
+
+=head1 DESCRIPTION
+
+    SlurmHC provides utility functions to perform healthcheck of slurm cluster nodes. 
+
+
+=head1 USAGE
+=head1 BUGS
+=head1 SUPPORT
+
+=head1 AUTHOR
+
+    Matej Batič
+    matej.batic@ijs.si
+
+
+=head1 COPYRIGHT
+
+    This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+    perl.
+    slurm.
+    schroot.
+    nfs.
+    cvmfs.
 
 =cut
 
-#################### subroutine header end ####################
+#################### main pod documentation end ###################
+
 
 
 sub new
@@ -42,66 +71,29 @@ sub new
 }
 
 
-#################### main pod documentation begin ###################
-## Below is the stub of documentation for your module. 
-## You better edit it!
+$Exporter::Verbose = 0;
 
 
-=head1 NAME
+sub import
+{
+    my $self = shift;
+    my $caller = caller;
 
-SlurmHC - Module abstract (<= 44 characters) goes here
+    foreach my $package ( @_ )
+    {
+	my $full_package = "SlurmHC::$package";
+	eval "require $full_package; 1";
+	if( $@ )
+	{
+	    carp "Could not require SlurmHC::$package: $@";
+	}
+	
+	$full_package->export($caller);
+    }
+    
+}
 
-=head1 SYNOPSIS
-
-  use SlurmHC;
-  blah blah blah
-
-
-=head1 DESCRIPTION
-
-Stub documentation for this module was created by ExtUtils::ModuleMaker.
-It looks like the author of the extension was negligent enough
-to leave the stub unedited.
-
-Blah blah blah.
-
-
-=head1 USAGE
-
-
-
-=head1 BUGS
-
-
-
-=head1 SUPPORT
-
-
-
-=head1 AUTHOR
-
-    A. U. Thor
-    CPAN ID: MODAUTHOR
-    XYZ Corp.
-    a.u.thor@a.galaxy.far.far.away
-    http://a.galaxy.far.far.away/modules
-
-=head1 COPYRIGHT
-
-This program is free software; you can redistribute
-it and/or modify it under the same terms as Perl itself.
-
-The full text of the license can be found in the
-LICENSE file included with this module.
-
-
-=head1 SEE ALSO
-
-perl(1).
-
-=cut
-
-#################### main pod documentation end ###################
+sub VERSION { return $VERSION }
 
 
 1;
