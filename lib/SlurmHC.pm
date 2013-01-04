@@ -67,6 +67,12 @@ sub new
 
     my $self = bless ({}, ref ($class) || $class);
 
+    my $self = bless {
+	error   => @errors,
+	message => @messages,
+    }, ref ($class) || $class;
+
+
     return $self;
 }
 
@@ -86,6 +92,9 @@ sub import
 	if( $@ )
 	{
 	    carp "Could not require SlurmHC::$package: $@";
+	}
+	else{
+	    print "Requred SlurmHC::$package\n";
 	}
 	
 	$full_package->export($caller);
