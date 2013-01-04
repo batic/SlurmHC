@@ -1,15 +1,16 @@
-pod2text SlurmHC.pm > README
+NAME
+        SlurmHC - Slurm healtcheck tests module for signet cluster
 
-If this is still here it means the programmer was too lazy to create the readme file.
+SYNOPSIS
+        use SlurmHC;
 
-You can create it now by using the command shown above from this directory.
+DESCRIPTION
+        SlurmHC provides utility functions to perform healthcheck of slurm cluster nodes.
 
-At the very least you should be able to use this set of instructions
-to install the module...
+COPYRIGHT
+        This program is free software; you can redistribute
+        it and/or modify it under the same terms as Perl itself.
 
-perl Makefile.PL
-make
-make test
-make install
+SEE ALSO
+        perl, slurm, schroot, nfs, cvmfs, ...
 
-If you are on a windows box you should use 'nmake' rather than 'make'.
