@@ -42,24 +42,50 @@ sub n_cpu {
 
 =item load_average( ITEM )
 
-Check the load average, issue error if load average
-(defaulting to 1.5*n_cpu) is above that limit.
+Check the load average, issue error if load average is above that limit.
+
+Multiple tests can be performed (up to three), for 1min, 5min or 15min 
+load average, as read from /proc/loadavgr
+
+Test: 
+  load_average( load_max_5min=>5 )
+will check if 5min load average is below 5*n_cpu. Additional test 
+can be passed (load_max_1min=>20, load_max_5min=>5, load_max_15min=>1.5).
+When called without argument, load_max_15min=>1.5 test will be evaluated.
+
+Error will be given when (all given) tests fail.
 
 =cut
 
 sub load_average {
+    my $self = shift;
+    #how to call both
+    # $object->load_average( ... )
+    #and
+    # SlurmHC::Basic::load_average( ... )
+    #and not run into "Odd number of elements" or something similar?
+    #(talk to JJJ)
+
     # load_max defaults to 1.5*n_cpu
-    my %defaults = ( load_max => 1.5 );
+    my %defaults = ( load_max => 1.55 );
     my %arg = (%defaults, @_);  # replace defaults with arguments (if there are)
+
+    #have load_max_1min, load_max_15min, load_max_5min
+    #check if all undef, define 1.5 to load_max_15min
+    #check that input values are positive!
+    # (and not too large???)
+    #perform given checks
+    #use named arguments like
+    # load_average( load_max_1min=>20, load_max_5min=>5, load_max_15min=>1,5)
+    #and raise error when (???) all of them are above?
+    #(talk to AF)
 
     my $load_max=$arg{load_max};
 
     if($load_max<0.5 || $load_max>3){
  	$load_max=1.5; 
     }
-    print "load_max = ".$load_max."\n";
-
-    
+   
     my $ncpu=n_cpu();
 
     open(LOAD, "/proc/loadavg") or do { 
@@ -85,7 +111,7 @@ sub load_average {
 
 
 
-
+1;
 
 
 =back
