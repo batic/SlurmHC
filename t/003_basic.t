@@ -20,11 +20,13 @@ is $object->n_cpu, 4, "Are there exactly 4 cpus?";
 #try running load_average
 is $object->load_average, 0, "Is load average below 1.5*n_cpu?";
 
-#try running load_average
-my $load=0.55;
-is($object->load_average( load_max=>$load ), 1, "Is load average below $load*n_cpu?");
+#try running load_average for 1min, 5min, 15min, various couples and all
+my $load=0.005;
+is($object->load_average( load_max_1min=>$load ), 1, "Is 1min load average below $load*n_cpu?");
+is($object->load_average( load_max_5min=>$load ), 1, "Is 5min load average below $load*n_cpu?");
+is($object->load_average( load_max_15min=>$load ), 1, "Is 15min load average below $load*n_cpu?");
+is($object->load_average( load_max_1min=>$load, load_max_5min=>$load ), 1, "Are 1min and 5min load averages ok?");
+is($object->load_average( load_max_1min=>$load, load_max_15min=>$load ), 1, "Are 1min and 15min load averages ok?");
+is($object->load_average( load_max_5min=>$load, load_max_15min=>$load ), 1, "Are 5min and 15min load averages ok?");
+is($object->load_average( load_max_1min=>$load, load_max_5min=>$load, load_max_15min=>$load ), 1, "Are 1min, 5min and 15min load averages ok?");
 
-TODO:{
-    local $TODO = "should be happening soon";
-    is $object->load_average( load_max=>$load, average=>1 ), 1, "Is load average for 1 min below $load*n_cpu?";
-}
