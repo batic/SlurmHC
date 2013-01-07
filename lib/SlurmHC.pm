@@ -31,9 +31,15 @@ BEGIN {
 
     SlurmHC provides utility functions to perform healthcheck of slurm cluster nodes. 
 
-=head1 USAGE
-=head1 BUGS
-=head1 SUPPORT
+=head1 EXAMPLE
+
+    #!/usr/bin/perl
+
+    use SlurmHC::Basic;
+    my $hc=SlurmHC::Basic->new();
+    $hc->load_average( load_max_5min=>1.5 );
+    $hc->Print();
+ 
 
 =head1 AUTHOR
 
@@ -48,11 +54,7 @@ BEGIN {
 
 =head1 SEE ALSO
 
-    perl.
-    slurm.
-    schroot.
-    nfs.
-    cvmfs.
+    SlurmHC::Basic
 
 =cut
 

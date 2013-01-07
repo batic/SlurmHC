@@ -10,23 +10,23 @@ use vars qw(@EXPORT $VERSION);
 
 =encoding utf8
 
-    =head1 NAME
+=head1 NAME
 
     SlurmHC::Basic -- Basic tests
 
-    =head1 SYNOPSIS
+=head1 SYNOPSIS
 
     use SlurmHC::Basic;
 
 =head1 DESCRIPTION
 
     Basic tests for Slurm healthcheck: 
-    - load average
-    - disk space
+    - load_average
+    - check_disk_space
 
 =head2 Functions
 
-=over 4
+=over 3
 
 =item n_cpu()
 
@@ -40,7 +40,7 @@ sub n_cpu {
 }
 
 
-=item load_average( ITEM )
+=item load_average( args )
 
 Check the load average, issue error if load average is above that limit.
 
@@ -154,7 +154,7 @@ sub load_average {
 
 
 
-=item load_average( ITEM )
+=item check_disk_space( args )
 
 Check available disk space, issue error if it is below given size.
 
