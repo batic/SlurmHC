@@ -60,17 +60,12 @@ Error will be given when (all given) tests fail.
 sub load_average {
     my $self = undef;
     $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Basic'); 
-    #how to call both
-    # $object->load_average( ... )
-    #and
-    # SlurmHC::Basic::load_average( ... )
-    #and not run into "Odd number of elements" or something similar?
-
+    
     #by default only run 15min average test
     #if nothing else is defined
     my %arg = ( load_max_1min => undef,
 		load_max_5min => undef,
-		load_max_15min => 1.5, 
+		load_max_15min => undef, 
 		@_);  
 
     #check if arguments are positive
@@ -78,21 +73,26 @@ sub load_average {
     #talk to AF for upper limits!
     if($arg{load_max_1min}<0.){
 	$arg{load_max_1min}=undef;
-	warn("Removing negative limit for 1min average!\n");
+	$self->SUPER::Warning((caller(0))[3],"Negative limit for 1min average!");
     }
     if($arg{load_max_5min}<0.){
 	$arg{load_max_5min}=undef;
-	warn("Removing negative limit for 5min average!\n");
+	$self->SUPER::Warning((caller(0))[3],"Negative limit for 5min average!");
     }
     if($arg{load_max_15min}<0.0){
 	$arg{load_max_15min}=1.5;
-	warn("Changing to default limit for 15min average!\n");
+	$self->SUPER::Warning((caller(0))[3],"Negative limit for 15min average!");
+    }
+    if(not defined $arg{load_max_1min} 
+       and not defined $arg{load_max_5min} 
+       and not defined $arg{load_max_15min}){
+	$arg{load_max_15min}=1.5;
     }
 
     my $ncpu=n_cpu();
 
     open(LOAD, "/proc/loadavg") or do {
-	#push $self->SUPER::{error},"(E) Load: Unable to get server load: $!";
+	$self->SUPER::Error((caller(0))[3],"Unable to get server load: $!");
 	return 1;
     };
 
@@ -105,22 +105,27 @@ sub load_average {
     if(defined $arg{load_max_1min}){
       if ( $load_1 > $arg{load_max_1min}*$ncpu ) {
 	  # load is above set limit
-	  print "1min load average above limit: $load_1 > ".($arg{load_max_1min}*$ncpu)."\n";
+	  $self->SUPER::Warning((caller(0))[3],
+				"1min load average above limit: $load_1 > "
+				.($arg{load_max_1min}*$ncpu));
 	  $error=1;
       }
     }
     if(defined $arg{load_max_5min}){
       if ( $load_5 > $arg{load_max_5min}*$ncpu ) {
 	  # load is above set limit
-	  print "5min load average above limit: $load_5 > ".($arg{load_max_5min}*$ncpu)."\n";
+	  $self->SUPER::Warning((caller(0))[3],
+				"5min load average above limit: $load_5 > "
+				.($arg{load_max_5min}*$ncpu));
 	  $error+=2;
       }
     }
     if(defined $arg{load_max_15min}){
 	if ( $load_15 > $arg{load_max_15min}*$ncpu ) {
-	    print "15min load average above limit: $load_15 > ".($arg{load_max_15min}*$ncpu)."\n";
 	    # load is above set limit
-	    # 	push $self->SUPER::{error},"(E) Load: <15min> to high: $load_15, should be below ".($arg{load_max_15min}*$ncpu);
+	    $self->SUPER::Warning((caller(0))[3],
+				  "15min load average above limit: $load_15 > "
+				  .($arg{load_max_15min}*$ncpu));
 	    $error+=3;
 	}
     }
@@ -132,17 +137,18 @@ sub load_average {
     
     if($error>0){
       if($error==$total_error_check){
-	  #push $self->SUPER::{error},"(E) Load: <1min> to high: $load_1, should be below ".($arg{load_max_1min}*$ncpu);
+	  $self->SUPER::Error((caller(0))[3],
+			      "Tested load average is too high.");
 	  return 1;
       }
       else{
-	  #warning??
-	  return 1;
+	  #warning was already issued, return with 0
+	  return 0;
       }
     }
     else{
-	#push $self->SUPER::{message},"(I) Load: all ok, $load_avg";
-      return 0;
+	$self->SUPER::Info((caller(0))[3],"Tested load average is ok.");
+	return 0;
     }
 }
 

@@ -23,43 +23,48 @@ is $object->load_average, 0, "Is load average below 1.5*n_cpu?";
 
 #try running load_average for 1min, 5min, 15min, various couples and all
 my $load=0.005;
-is($object->load_average( load_max_1min=>$load ), 1, 
-   "Is 1min load average below $load*n_cpu?");
+warning_like { is($object->load_average( load_max_1min=>$load ), 1, 
+		  "Is 1min load average below $load*n_cpu?") } qr/above limit/, "Check for warning.";
 
-is($object->load_average( load_max_5min=>$load ), 1, 
-   "Is 5min load average below $load*n_cpu?");
+warning_like { is($object->load_average( load_max_5min=>$load ), 1, 
+		  "Is 5min load average below $load*n_cpu?") } qr/above limit/, "Check for warning.";
 
-is($object->load_average( load_max_15min=>$load ), 1, 
-   "Is 15min load average below $load*n_cpu?");
+warning_like { is($object->load_average( load_max_15min=>$load ), 1, 
+		  "Is 15min load average below $load*n_cpu?") } qr/above limit/, "Check for warning.";
 
-is($object->load_average( load_max_1min=>$load, load_max_5min=>$load ), 1, 
-   "Are 1min and 5min load averages ok?");
+warnings_like { is($object->load_average( load_max_1min=>$load, load_max_5min=>$load ), 1, 
+		   "Are 1min and 5min load averages ok?") } [ qr/above limit/, qr/above limit/ ], 
+    "Check for warnings.";
 
-is($object->load_average( load_max_1min=>$load, load_max_15min=>$load ), 1, 
-   "Are 1min and 15min load averages ok?");
+warnings_like { is($object->load_average( load_max_1min=>$load, load_max_15min=>$load ), 1, 
+		   "Are 1min and 15min load averages ok?") } [ qr/above limit/, qr/above limit/ ], 
+    "Check for warnings.";
 
-is($object->load_average( load_max_5min=>$load, load_max_15min=>$load ), 1, 
-   "Are 5min and 15min load averages ok?");
+warnings_like { is($object->load_average( load_max_5min=>$load, load_max_15min=>$load ), 1, 
+		   "Are 5min and 15min load averages ok?") } [ qr/above limit/, qr/above limit/ ], 
+    "Check for warnings.";
 
-is($object->load_average( load_max_1min=>$load, load_max_5min=>$load, load_max_15min=>$load ), 1, 
-   "Are 1min, 5min and 15min load averages ok?");
+warnings_like { is($object->load_average( load_max_1min=>$load, load_max_5min=>$load, load_max_15min=>$load ), 1, 
+		   "Are 1min, 5min and 15min load averages ok?"); } [ qr/above limit/, qr/above limit/, qr/above limit/ ], 
+    "Check for warnings.";
 
 #try running load_average with negative value
 $load=-0.5;
 warning_like { $object->load_average( load_max_1min=>$load ) } 
- qr/Removing negative limit/ , "Check for negative load max for 1min average";
+ qr/Negative limit/ , "Check for negative load max for 1min average";
 
 warning_like { $object->load_average( load_max_5min=>$load ) } 
- qr/Removing negative limit/ , "Check for negative load max for 5min average";
+ qr/Negative limit/ , "Check for negative load max for 5min average";
 
 warning_like { $object->load_average( load_max_15min=>$load ) } 
-qr/Changing to default limit/ , "Check for negative load max for 15min average";
+qr/Negative limit/ , "Check for negative load max for 15min average";
 
 warnings_like { $object->load_average( load_max_1min=>$load, 
 				       load_max_5min=>$load, 
 				       load_max_15min=>$load ) } 
 [
- qr/Removing negative limit/,
- qr/Removing negative limit/,
- qr/Changing to default limit/,
+ qr/Negative limit/,
+ qr/Negative limit/,
+ qr/Negative limit/,
 ] , "Check for negative load max for all averages";
+
