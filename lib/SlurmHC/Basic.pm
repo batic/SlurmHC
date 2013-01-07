@@ -75,6 +75,8 @@ sub load_average {
 
     #in case of no argument
     #perform 15min average test with load_max = 1.5*n_cpu
+    #
+    #this is NOT ok: what about if all are <0?
     if(not defined $arg{load_max_1min} && 
        not defined $arg{load_max_5min} &&
        not defined $arg{load_max_15min}) {
@@ -107,17 +109,20 @@ sub load_average {
     if(defined $arg{load_max_1min}){
       if ( $load_1 > $arg{load_max_1min}*$ncpu ) {
 	# load is above set limit
-	$error=1;
+  print "1min above limit: $load_1 > $arg{load_max_1min}*$ncpu\n";
+  $error=1;
       }
     }
     if(defined $arg{load_max_5min}){
       if ( $load_5 > $arg{load_max_5min}*$ncpu ) {
 	# load is above set limit
+  print "5min above limit: $load_5 > $arg{load_max_5min}*$ncpu\n";
 	$error+=2;
       }
     }
     if(defined $arg{load_max_15min}){
       if ( $load_15 > $arg{load_max_15min}*$ncpu ) {
+  print "15min above limit: $load_15 > $arg{load_max_15min}*$ncpu\n";
 	# load is above set limit
 	# 	push $self->SUPER::{error},"(E) Load: <15min> to high: $load_15, should be below ".($arg{load_max_15min}*$ncpu);
 	$error+=3;
@@ -136,6 +141,7 @@ sub load_average {
       }
       else{
 	#warning??
+  return 1;
       }
     }
     else{
