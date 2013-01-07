@@ -6,7 +6,7 @@ use parent 'SlurmHC';
 use base qw(Exporter);
 use vars qw(@EXPORT $VERSION);
 
-@EXPORT = qw( n_cpu load_average );
+@EXPORT = qw( n_cpu load_average check_disk_space );
 
 =encoding utf8
 
@@ -153,35 +153,80 @@ sub load_average {
 }
 
 
+
+=item load_average( ITEM )
+
+Check available disk space, issue error if it is below given size.
+
+Test: 
+  check_disk_space( mount_point, size_available_warning, size_available_error )
+will check mount point has at least size_available_error (GB). 
+
+In case of available disk space below warning level (but still above error level), 
+warning will be issued.
+
+Error will be given when available disk space is below error level.
+
+=cut
+
+
+sub check_disk_space {
+    my $self = undef;
+    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Basic'); 
+    
+    my $mount_point=shift;
+    my $warning_limit_G=shift;
+    my $error_limit_G=shift;
+
+    $mount_point="/data0" unless $mount_point;
+    $warning_limit_G="30G" unless $warning_limit_G;
+    
+    if($warning_limit_G !~ /\d+G/){
+	$self->SUPER::Warning((caller(0))[3], "Configuration error: mount_point limits should be in xxG format (30G will be used for warning).");
+	$warning_limit_G="30G";
+    }
+    my $warning_limit = $warning_limit_G;
+    $warning_limit =~ s/G//g;
+    $warning_limit=$warning_limit*1024*1024;
+    
+    $error_limit_G="30G" unless $error_limit_G;
+    if($error_limit_G !~ /\d+G/){
+	$self->SUPER::Warning((caller(0))[3], "Configuration error: mount_point limits should be in xxG format (20G will be used for hard error).");
+	$error_limit_G="20G";
+    }
+    my $error_limit = $error_limit_G;
+    $error_limit =~ s/G//g;
+    $error_limit = $error_limit*1024*1024;
+    
+    my $df_mount_point=`df $mount_point | grep $mount_point`;
+    my ($fs, $blocks, $used, $avail) = split /\s+/, $df_mount_point;
+
+    #finish here if available disk space is below error limit
+    if($avail<$error_limit){
+	# not enough mount_point space.
+	$self->SUPER::Error((caller(0))[3], "$mount_point filled up: only ".sprintf("%.2f",$avail/1024/1024)."G available, should be above $error_limit_G.");
+	return 1;
+    }
+    
+    #issue warning if below warning limit, but still return 0
+    my $warning=0;
+    if($avail<$warning_limit){
+	# mount_point space getting low.
+	$self->SUPER::Warning((caller(0))[3], "$mount_point is getting filled up: only ".sprintf("%.2f",$avail/1024/1024)."G available, should be above $warning_limit_G.");
+	$warning=1;
+    }
+
+    #all ok, issue OK info only if there is no warning
+    $self->SUPER::Info((caller(0))[3], "All ok: $mount_point: ".sprintf("%.2f",$avail/1024/1024)."G available.") unless $warning;
+
+    return 0;
+
+}
+
 1;
 
 
 =back
-
-=head1 SEE ALSO
-
-L<Test::Data>,
-L<Test::Data::Scalar>,
-L<Test::Data::Function>,
-L<Test::Data::Hash>,
-L<Test::Builder>
-
-=head1 SOURCE AVAILABILITY
-
-This source is in Github:
-
-	https://github.com/briandfoy/test-data
-
-=head1 AUTHOR
-
-brian d foy, C<< <bdfoy@cpan.org> >>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (c) 2002-2012 brian d foy.  All rights reserved.
-
-This program is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
 
 =cut
 

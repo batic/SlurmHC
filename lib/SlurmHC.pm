@@ -138,11 +138,11 @@ sub Error {
 }
 
 sub Print {
-    print "# SlurmHC - info #######################################\n" if @info;
+    print "(I)SlurmHC - info #######################################\n" if @info;
     print join("\n",@info)."\n";
-    print "# SlurmHC - warnings ###################################\n" if @warnings;
+    print "(W)SlurmHC - warnings ###################################\n" if @warnings;
     print join("\n",@warnings)."\n";
-    print "# SlurmHC - errors #####################################\n" if @errors;
+    print "(E)SlurmHC - errors #####################################\n" if @errors;
     print join("\n",@errors)."\n";
 }	
 
