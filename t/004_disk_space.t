@@ -25,6 +25,14 @@ warning_like { is $object->check_disk_space( "/data0", "240G", "20G" ) , 0,
 is  $object->check_disk_space( "/data0", "240G", "220G" ), 1, 
 	       "Check /data0 with warning 240GB and error 220GB.";
 
+TODO: {
+    local $TODO = 'Tests to be implemented yet.';
+
+    is $object->check_disk_space( "/data0", "40", "20" ), 1, 
+	       "Check /data0 with warning 40 and error 20 - expecting a warning in config.";
+
+}
+    
 $object->Print();
 
 #$object->Mail(qw(matej.batic@ijs.si batic.matej@gmail.com));
