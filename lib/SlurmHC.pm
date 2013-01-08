@@ -18,7 +18,8 @@ sub new {
 	error   => @errors,
 	warnings => @warnings,
 	info => @info,
-	tests => @tests,
+	tests => %tests,
+	test_results => %test_results,
 	hostname => ''
     }, ref ($class) || $class;
 
@@ -67,7 +68,8 @@ sub import {
 	}
 	else{
 	    #print "All ok with package $package\n";
-	    push @tests, $package;
+	    $tests{$package}=0; #the test has not yet been run
+	    $test_results{$package}=undef; #for the moment the test result is unknown
 	}
     }
 
@@ -79,24 +81,34 @@ sub run {
     my $self=shift;
     shift if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
 
-    my %TS = map { $_, 1 } @tests;
-    
     my $ret=0;
     while(@_){
 	my $test=shift;
 	my $args=shift;
 	$test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
-	if( defined $TS{$test} ){
+	if( defined $tests{$test} ){
 	    if( defined $$args ){
-		$ret=$test->run( %$$args );
+		$test_results{$test}=$test->run( %$$args );
+		$tests{$test}++; #the test has been run
 	    }
 	    else{
-		$ret=$test->run();
+		$test_results{$test}=$test->run();
+		$tests{$test}++; #the test has been run
 	    }
 	}
     }
     
-    return $ret;
+    return 0;
+}
+
+sub Status {
+    my $self=shift;
+    my $test=shift;
+
+    return $test_retults{$test} if defined $tests{$test};
+
+    #else
+    return 1;
 }
 
 sub slurm_time {
