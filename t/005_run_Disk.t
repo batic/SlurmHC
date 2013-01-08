@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/003_disk_space.t - check scratch disk space availability
+# t/005_run_Disk.t - check scratch disk space availability
 
 use Test::More 'no_plan';
 use Test::Warn;

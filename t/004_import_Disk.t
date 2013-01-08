@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/002_load_submodules.t - check module import sub
+# t/004_import_Disk.t - check module import sub for Disk test package
 
 use Test::More 'no_plan';
 

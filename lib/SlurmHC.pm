@@ -11,53 +11,6 @@ BEGIN {
     $VERSION     = '0.01';
 }
 
-#################### main pod documentation begin ###################
-
-=encoding utf8
-
-=head1 NAME
-
-    SlurmHC - Slurm healtcheck tests module for signet cluster 
-
-=head1 SYNOPSIS
-
-    use SlurmHC;
-
-=head1 DESCRIPTION
-
-    SlurmHC provides utility functions to perform healthcheck of slurm cluster nodes. 
-
-=head1 EXAMPLE
-
-    #!/usr/bin/perl
-
-    use SlurmHC;
-    my $hc=SlurmHC->new();
-    $hc->run( Basic=> { load_max_15min=> 1.5 } );
-    $hc->Print();
- 
-
-=head1 AUTHOR
-
-    Matej Batič
-    matej.batic@ijs.si
-
-
-=head1 COPYRIGHT
-
-    This program is free software; you can redistribute
-    it and/or modify it under the same terms as Perl itself.
-
-=head1 SEE ALSO
-    
-    Other modules(tests) from SlurmHC.
-
-=cut
-
-#################### main pod documentation end ###################
-
-
-
 sub new {
     my ($class, %parameters) = @_;
 
@@ -193,4 +146,53 @@ sub Mail {
 
 1;
 # The preceding line will help the module return a true value
+
+
+#################### main pod documentation begin ###################
+
+=encoding utf8
+
+=head1 NAME
+
+    SlurmHC - Slurm healtcheck tests module for signet cluster 
+
+=head1 SYNOPSIS
+
+    use SlurmHC;
+
+=head1 DESCRIPTION
+
+    SlurmHC provides utility functions to perform healthcheck of slurm cluster nodes. 
+
+=head1 EXAMPLE
+
+    #!/usr/bin/perl
+
+    use SlurmHC;
+    my $hc=SlurmHC->new();
+    $hc->run( 
+        Load => \{ load_max_15min=> 1.5 },
+        Disk => \{ mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" }
+    );
+    $hc->Print();
+ 
+
+=head1 AUTHOR
+
+    Matej Batič
+    matej.batic@ijs.si
+
+
+=head1 COPYRIGHT
+
+    This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+    
+    Other modules(tests) from SlurmHC.
+
+=cut
+
+#################### main pod documentation end ###################
 

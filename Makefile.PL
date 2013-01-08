@@ -1,6 +1,5 @@
 use ExtUtils::MakeMaker;
 
-
 WriteMakefile (
     'NAME'          => 'SlurmHC',
     'ABSTRACT'      => '',

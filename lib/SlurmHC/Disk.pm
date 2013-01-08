@@ -78,3 +78,52 @@ sub run{
 }
 
 1;
+
+#################### main pod documentation begin ###################
+
+=encoding utf8
+
+=head1 NAME
+
+    SlurmHC::Disk - Slurm healtcheck (sub)package for testing available disk space
+
+=head1 SYNOPSIS
+
+    use SlurmHC qw( Disk );
+
+=head1 DESCRIPTION
+
+    Will check for available disk space on given "mount_point" and 
+    issue warning if below "warning_limit" and error if below "error_limit".
+
+=head1 EXAMPLE
+
+    #!/usr/bin/perl
+
+    use SlurmHC qw( Disk );
+    my $hc=SlurmHC->new();
+    $hc->run( 
+        Disk => \{ mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" }
+    );
+    $hc->Print();
+ 
+
+=head1 AUTHOR
+
+    Matej Batič
+    matej.batic@ijs.si
+
+
+=head1 COPYRIGHT
+
+    This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+    
+    SlurmHC.
+
+=cut
+
+#################### main pod documentation end ###################
+

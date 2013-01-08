@@ -109,3 +109,64 @@ sub run{
 }
 
 1;
+
+#################### main pod documentation begin ###################
+
+=encoding utf8
+
+=head1 NAME
+
+    SlurmHC::Load - Slurm healtcheck (sub)package for testing machine load
+
+=head1 SYNOPSIS
+
+    use SlurmHC qw( Load );
+
+=head1 DESCRIPTION
+
+    Will parse /proc/loadavg for load check.
+    The average load(s) will be checked with respect to n_cpu()*limit, issuing warning
+    when given load is above limit and issuing error when all loads are above limits.
+
+    In this sense checks
+    $hc->run(
+        Load => \{ load_max_1min=> .005 }
+    );
+    and
+    $hc->run(
+        Load => \{ load_max_1min=> .005, load_max_5min=>1.5 } 
+    );
+    are different; first run will (probably - load 0.005*n_cpu is quite low) will raise error
+    while the second won't.
+
+
+=head1 EXAMPLE
+
+    #!/usr/bin/perl
+
+    use SlurmHC qw( Load );
+    my $hc=SlurmHC->new();
+    $hc->run(
+        Load => \{ load_max_15min=> 1.5 }, 
+    );
+    $hc->Print();
+ 
+
+=head1 AUTHOR
+
+    Matej Batič
+    matej.batic@ijs.si
+
+
+=head1 COPYRIGHT
+
+    This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+    
+    SlurmHC.
+
+=cut
+
+#################### main pod documentation end ###################
