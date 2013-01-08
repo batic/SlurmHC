@@ -1,21 +1,14 @@
 package SlurmHC;
 
 BEGIN {
-#    use Exporter ();
     use strict;
     use Carp qw(carp);
     use File::Spec::Functions qw(catdir catfile splitdir);
     use File::Basename 'fileparse';
-    
-#    use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+    use POSIX qw(strftime);
+
     use vars qw($VERSION);
     $VERSION     = '0.01';
-#    @ISA         = qw(Exporter);
-
-#    #Give a hoot don't pollute, do not export more than needed by default
-#    @EXPORT      = qw();
-#    @EXPORT_OK   = qw();
-#    %EXPORT_TAGS = ();
 }
 
 #################### main pod documentation begin ###################
@@ -56,8 +49,8 @@ BEGIN {
     it and/or modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
-
-    SlurmHC::Basic
+    
+    Other modules(tests) from SlurmHC.
 
 =cut
 
@@ -67,7 +60,6 @@ BEGIN {
 
 sub new {
     my ($class, %parameters) = @_;
-    print "SlurmHC::new()\n";
 
     my $self = bless {
 	error   => @errors,
@@ -121,7 +113,7 @@ sub import {
 	    carp "Could not require $package: $@";
 	}
 	else{
-	    print "All ok with package $package\n";
+	    #print "All ok with package $package\n";
 	    push @tests, $package;
 	}
     }
@@ -132,52 +124,56 @@ sub VERSION { return $VERSION }
 
 sub run {
     my $self=shift;
-    shift if (scalar(@_) %2 );
-    my %run_tests = @_;
+    shift if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
+
     my %TS = map { $_, 1 } @tests;
-
-    # print "WILL NOW RUN: \n";
-    # foreach my $t ( keys %run_tests ){
-    # 	print "$t : $run_tests{$t} \n";
-    # }
-    # print "END\n";
-
-    foreach my $test ( keys %TS ){
-	if(defined $run_tests{$test}){ 
-	    print "running: $test ( $run_tests{$test} ) \n";
-	    $test->run($self,%{$run_tests{$test}});
-	}
-	else{
-	    print "running: $test()\n";
-	    $test->run( load_max_15min=>0.02 ); 
+    
+    my $ret=0;
+    while(@_){
+	my $test=shift;
+	my $args=shift;
+	$test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
+	if( defined $TS{$test} ){
+	    if( defined $$args ){
+		$ret=$test->run( %$$args );
+	    }
+	    else{
+		$ret=$test->run();
+	    }
 	}
     }
+    
     return $ret;
+}
+
+sub slurm_time {
+    my $str=strftime "[%FT%H:%M:%S]", localtime;
+    return $str;
 }
 
 sub Info {
     my ($self, $caller, $message) = @_;
-    push @info, "(I) ".localtime." $caller: $message";
+    push @info, slurm_time." (I) $caller: $message";
 }
 
 sub Warning {
     my ($self, $caller, $message) = @_;
-    push @warnings, "(W) ".localtime." $caller: $message";
-    warn("(W) ".localtime." $caller: $message");
+    push @warnings, slurm_time." (W) $caller: $message";
+    warn("(W) ".slurm_time." $caller: $message");
 }
 
 sub Error {
     my ($self, $caller, $message) = @_;
-    push @errors, "(E) ".localtime." $caller: $message";
+    push @errors, slurm_time." (E) $caller: $message";
 }
 
 sub Print {
-    print "(I)SlurmHC - info #######################################\n" if @info;
-    print join("\n",@info)."\n";
-    print "(W)SlurmHC - warnings ###################################\n" if @warnings;
-    print join("\n",@warnings)."\n";
-    print "(E)SlurmHC - errors #####################################\n" if @errors;
-    print join("\n",@errors)."\n";
+    print "SlurmHC - info #######################################\n" if @info;
+    print join("\n",@info)."\n\n";
+    print "SlurmHC - warnings ###################################\n" if @warnings;
+    print join("\n",@warnings)."\n\n";
+    print "SlurmHC - errors #####################################\n" if @errors;
+    print join("\n",@errors)."\n\n";
 }	
 
 sub Mail {

@@ -17,23 +17,12 @@ sub run{
     $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Load'); 
     my $parent = shift;
 
-    print "number of args = ".(scalar(@_))."\n";
-    print "arg[0] = ".@_[0]."\n";
-    print "arg[1] = ".@_[1]."\n";
-
-    print "self: $self\n";
-    print "parent: $parent\n";
-    
     #by default only run 15min average test
     #if nothing else is defined
     my %arg = ( load_max_1min => undef,
 		load_max_5min => undef,
 		load_max_15min => undef,
 		@_);
-
-    foreach my $k (keys %arg) {
-	print $k." => ".$arg{$k}."\n";
-    }
 
     #check if arguments are positive
     #undefine if not, keep only 15min average
@@ -82,8 +71,8 @@ sub run{
       if ( $load_5 > $arg{load_max_5min}*$ncpu ) {
 	  # load is above set limit
 	  $parent->Warning((caller(0))[3],
-				"5min load average above limit: $load_5 > "
-				.($arg{load_max_5min}*$ncpu));
+			   "5min load average above limit: $load_5 > "
+			   .($arg{load_max_5min}*$ncpu));
 	  $error+=2;
       }
     }
@@ -91,8 +80,8 @@ sub run{
 	if ( $load_15 > $arg{load_max_15min}*$ncpu ) {
 	    # load is above set limit
 	    $parent->Warning((caller(0))[3],
-				  "15min load average above limit: $load_15 > "
-				  .($arg{load_max_15min}*$ncpu));
+			     "15min load average above limit: $load_15 > "
+			     .($arg{load_max_15min}*$ncpu));
 	    $error+=3;
 	}
     }
@@ -105,7 +94,7 @@ sub run{
     if($error>0){
       if($error==$total_error_check){
 	  $parent->Error((caller(0))[3],
-			      "Tested load average is too high.");
+			 "Tested load average is too high.");
 	  return 1;
       }
       else{
