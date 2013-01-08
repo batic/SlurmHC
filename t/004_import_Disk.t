@@ -4,11 +4,8 @@
 
 use Test::More 'no_plan';
 
-
-#importing
-my @imports = qw( Basic );
-
-#try to: use SlurmHC
+#importing Load module
+my @imports = qw( Disk );
 BEGIN { use_ok( 'SlurmHC', @imports ); }
 
 #construct new SlurmHC object and check if it is really a SlurmHC
