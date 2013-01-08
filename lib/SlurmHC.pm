@@ -1,19 +1,20 @@
 package SlurmHC;
 
 BEGIN {
-    use Exporter ();
-    use strict;
-    use Carp qw(carp);
-    
-    use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = '0.01';
-    @ISA         = qw(Exporter);
-    #Give a hoot don't pollute, do not export more than needed by default
-    @EXPORT      = qw();
-    @EXPORT_OK   = qw();
-    %EXPORT_TAGS = ();
-}
+use Exporter ();
+use strict;
+use Carp qw(carp);
+use File::Spec::Functions qw(catdir catfile splitdir);
+use File::Basename 'fileparse';
 
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+$VERSION     = '0.01';
+@ISA         = qw(Exporter);
+#Give a hoot don't pollute, do not export more than needed by default
+@EXPORT      = qw();
+@EXPORT_OK   = qw();
+%EXPORT_TAGS = ();
+}
 
 #################### main pod documentation begin ###################
 
@@ -76,7 +77,7 @@ sub new {
 
     $hostname = `hostname`;
     chomp($hostname);
-    
+
     return $self;
 }
 
@@ -84,25 +85,49 @@ sub new {
 $Exporter::Verbose = 0;
 
 
+sub list_testmodules {
+  my $namespace = 'SlurmHC';
+
+  # Check all directories
+  my (@modules, %found);
+  for my $directory (@INC) {
+    next unless -d (my $path = catdir $directory, split(/::|'/, $namespace));
+
+    # List "*.pm" files in directory
+    opendir(my $dir, $path);
+    for my $file (grep /\.pm$/, readdir $dir) {
+      next if -d catfile splitdir($path), $file;
+
+      # Module found
+      my $class = "${namespace}::" . fileparse $file, qr/\.pm/;
+      push @modules, $class unless $found{$class}++;
+    }
+  }
+
+  return @modules;
+
+}
+
 sub import {
     my $self = shift;
     my $caller = caller;
 
-    foreach my $package ( @_ )
+    my @packages =  map { 'SlurmHC::' . $_ } @_;
+    @packages = $self->list_testmodules() unless @_;
+
+    foreach my $package ( @packages )
     {
-	my $full_package = "SlurmHC::$package";
-	eval "require $full_package; 1";
+	eval "require $package; 1";
 	if( $@ )
 	{
-	    carp "Could not require SlurmHC::$package: $@";
+	    carp "Could not require $package: $@";
 	}
 	else{
-	    print "Requred SlurmHC::$package\n";
+	    print "Requred $package\n";
 	}
-	
-	$full_package->export($caller);
+	$package->export($caller);
     }
-    
+
 }
 
 sub VERSION { return $VERSION }

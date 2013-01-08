@@ -58,30 +58,30 @@ Error will be given when (all given) tests fail.
 =cut
 
 sub load_average {
-    my $self = undef;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Basic'); 
-    
+    my $self;
+    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Basic');
+
     #by default only run 15min average test
     #if nothing else is defined
     my %arg = ( load_max_1min => undef,
 		load_max_5min => undef,
-		load_max_15min => undef, 
-		@_);  
+		load_max_15min => undef,
+		@_);
 
     #check if arguments are positive
     #undefine if not, keep only 15min average
     #talk to AF for upper limits!
     if($arg{load_max_1min}<0.){
 	$arg{load_max_1min}=undef;
-	$self->SUPER::Warning((caller(0))[3],"Negative limit for 1min average!");
+	$self->Warning((caller(0))[3],"Negative limit for 1min average!");
     }
     if($arg{load_max_5min}<0.){
 	$arg{load_max_5min}=undef;
-	$self->SUPER::Warning((caller(0))[3],"Negative limit for 5min average!");
+	$self->Warning((caller(0))[3],"Negative limit for 5min average!");
     }
     if($arg{load_max_15min}<0.0){
 	$arg{load_max_15min}=1.5;
-	$self->SUPER::Warning((caller(0))[3],"Negative limit for 15min average!");
+	$self->Warning((caller(0))[3],"Negative limit for 15min average!");
     }
     if(not defined $arg{load_max_1min} 
        and not defined $arg{load_max_5min} 
