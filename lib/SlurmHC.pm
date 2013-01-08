@@ -143,7 +143,7 @@ sub run {
     # print "END\n";
 
     foreach my $test ( keys %TS ){
-	if(defined $run_tests{$test}){
+	if(defined $run_tests{$test}){ 
 	    print "running: $test ( $run_tests{$test} ) \n";
 	    $test->run($self,%{$run_tests{$test}});
 	}
