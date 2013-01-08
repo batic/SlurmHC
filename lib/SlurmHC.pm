@@ -1,19 +1,21 @@
 package SlurmHC;
 
 BEGIN {
-use Exporter ();
-use strict;
-use Carp qw(carp);
-use File::Spec::Functions qw(catdir catfile splitdir);
-use File::Basename 'fileparse';
+#    use Exporter ();
+    use strict;
+    use Carp qw(carp);
+    use File::Spec::Functions qw(catdir catfile splitdir);
+    use File::Basename 'fileparse';
+    
+#    use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+    use vars qw($VERSION);
+    $VERSION     = '0.01';
+#    @ISA         = qw(Exporter);
 
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-$VERSION     = '0.01';
-@ISA         = qw(Exporter);
-#Give a hoot don't pollute, do not export more than needed by default
-@EXPORT      = qw();
-@EXPORT_OK   = qw();
-%EXPORT_TAGS = ();
+#    #Give a hoot don't pollute, do not export more than needed by default
+#    @EXPORT      = qw();
+#    @EXPORT_OK   = qw();
+#    %EXPORT_TAGS = ();
 }
 
 #################### main pod documentation begin ###################
@@ -36,9 +38,9 @@ $VERSION     = '0.01';
 
     #!/usr/bin/perl
 
-    use SlurmHC::Basic;
-    my $hc=SlurmHC::Basic->new();
-    $hc->load_average( load_max_5min=>1.5 );
+    use SlurmHC;
+    my $hc=SlurmHC->new();
+    $hc->run( Basic=> { load_max_15min=> 1.5 } );
     $hc->Print();
  
 
@@ -65,13 +67,13 @@ $VERSION     = '0.01';
 
 sub new {
     my ($class, %parameters) = @_;
-
-    my $self = bless ({}, ref ($class) || $class);
+    print "SlurmHC::new()\n";
 
     my $self = bless {
 	error   => @errors,
 	warnings => @warnings,
 	info => @info,
+	tests => @tests,
 	hostname => ''
     }, ref ($class) || $class;
 
@@ -80,10 +82,6 @@ sub new {
 
     return $self;
 }
-
-
-$Exporter::Verbose = 0;
-
 
 sub list_testmodules {
   my $namespace = 'SlurmHC';
@@ -123,44 +121,53 @@ sub import {
 	    carp "Could not require $package: $@";
 	}
 	else{
-	    print "Requred $package\n";
+	    print "All ok with package $package\n";
+	    push @tests, $package;
 	}
-	$package->export($caller);
     }
 
 }
 
 sub VERSION { return $VERSION }
 
+sub run {
+    my $self=shift;
+    shift if (scalar(@_) %2 );
+    my %run_tests = @_;
+    my %TS = map { $_, 1 } @tests;
+
+    # print "WILL NOW RUN: \n";
+    # foreach my $t ( keys %run_tests ){
+    # 	print "$t : $run_tests{$t} \n";
+    # }
+    # print "END\n";
+
+    foreach my $test ( keys %TS ){
+	if(defined $run_tests{$test}){
+	    print "running: $test ( $run_tests{$test} ) \n";
+	    $test->run($self,%{$run_tests{$test}});
+	}
+	else{
+	    print "running: $test()\n";
+	    $test->run( load_max_15min=>0.02 ); 
+	}
+    }
+    return $ret;
+}
 
 sub Info {
-    my $self = undef;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
-    
-    my $caller = shift;
-    my $message = shift;
-
+    my ($self, $caller, $message) = @_;
     push @info, "(I) ".localtime." $caller: $message";
 }
 
 sub Warning {
-    my $self = undef;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
-    
-    my $caller = shift;
-    my $message = shift;
-
+    my ($self, $caller, $message) = @_;
     push @warnings, "(W) ".localtime." $caller: $message";
     warn("(W) ".localtime." $caller: $message");
 }
 
 sub Error {
-    my $self = undef;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
-    
-    my $caller = shift;
-    my $message = shift;
-
+    my ($self, $caller, $message) = @_;
     push @errors, "(E) ".localtime." $caller: $message";
 }
 
