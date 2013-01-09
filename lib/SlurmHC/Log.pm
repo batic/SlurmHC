@@ -14,35 +14,41 @@ sub run{
 
 sub new {
   my $class= shift;
+  my $self = bless {
+		    options => {},
+		   }, ref ($class) || $class;
+  $self->_init(@_);
+  return $self;
+}
 
+sub _init {
+  my $self=shift;
   my %arg =
     (
-     file 	=> '/var/log/slurmHC.log',
-     verbosity => 'all',
+     file 	=> '/tmp/slurmHC.log',
+     verbosity  => 'all',
      @_
     );
 
-  $arg{verbosity}="error" unless defined $arg{verbosity} and $arg{verbosity}=~/all|error|info|warn|debug/;
-  $arg{file}="/tmp/SlurmHC.log" unless defined $arg{file};
+  $options{verbosity}="error";
+  $options{verbosity}=$arg{verbosity} if $arg{verbosity}=~/all|error|info|warn|debug/;
+  $options{file}="/tmp/SlurmHC.log";
+  $options{file}=$arg{file} if defined $arg{file};
 
-  my $self = bless {
-		    arg => %arg,
-		   }, ref ($class) || $class;
+  # while( my($k,$v) = each %arg){
+  #   print "SlurmHC::Log:$k = $v\n";
+  # }
 
-  while( my($k,$v) = each %arg){
-    print "SlurmHC::Log:$k = $v\n";
-  }
-
-  $self->{fh} = new FileHandle ">>$arg{file}";
-  die "Unable to write to $arg{file}" if (!defined $self->{fh});
+  $self->{fh} = new FileHandle ">>$options{file}";
+  die "Unable to write to $options{file}" if (!defined $self->{fh});
   $self->{fh}->autoflush();
 
-  return $self;
 }
 
 sub Verbosity {
   my $self=shift;
-  return $arg{verbosity};
+  print "In Verbosity, verbosity = $options{verbosity}\n";
+  return $options{verbosity};
 }
 
 sub DESTROY {
