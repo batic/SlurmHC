@@ -81,7 +81,6 @@ sub run {
     my $self=shift;
     shift if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
 
-    my $ret=0;
     while(@_){
 	my $test=shift;
 	my $args=shift;
@@ -97,8 +96,12 @@ sub run {
 	    }
 	}
     }
-    
-    return 0;
+
+    my $ret=0;
+    while( my ($k, $v) = each %test_results){
+	$ret+=$v;
+    }
+    return ($ret>0) ? 1 : 0;
 }
 
 sub Status {
