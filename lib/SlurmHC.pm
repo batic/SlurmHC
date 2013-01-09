@@ -6,6 +6,7 @@ BEGIN {
     use File::Spec::Functions qw(catdir catfile splitdir);
     use File::Basename 'fileparse';
     use POSIX qw(strftime);
+    use Time::HiRes qw(gettimeofday tv_interval);
 
     use vars qw($VERSION);
     $VERSION     = '0.01';
@@ -20,11 +21,15 @@ sub new {
 	info => @info,
 	tests => %tests,
 	test_results => %test_results,
-	hostname => ''
+	hostname => '',
+	time_running => 0,
+	hc_start_time => 0,
     }, ref ($class) || $class;
 
     $hostname = `hostname`;
     chomp($hostname);
+    
+    $hc_start_time=slurm_time();
 
     return $self;
 }
@@ -81,6 +86,9 @@ sub run {
     my $self=shift;
     shift if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
 
+    #start timing
+    my $start_time=[gettimeofday]; #this will be needed for total run time
+    
     while(@_){
 	my $test=shift;
 	my $args=shift;
@@ -97,6 +105,10 @@ sub run {
 	}
     }
 
+    #stop timing and add elapsed time
+    my $end_time = [gettimeofday];
+    $time_running+= tv_interval $start_time, $end_time;
+    
     my $ret=0;
     while( my ($k, $v) = each %test_results){
 	$ret+=$v;
@@ -108,10 +120,11 @@ sub Status {
     my $self=shift;
     my $test=shift;
 
-    return $test_retults{$test} if defined $tests{$test};
+    #return test result if test has been defined
+    #but test result may be undef (since might not have been run yet)
+    #return -1 if not defined
 
-    #else
-    return 1;
+    return (defined $tests{$test}) ? $test_results{$test} : -1;
 }
 
 sub slurm_time {
@@ -136,8 +149,10 @@ sub Error {
 }
 
 sub Print {
-    print "SlurmHC - info #######################################\n" if @info;
-    print join("\n",@info)."\n\n";
+    print "SlurmHC - info #######################################\n";
+    print $hc_start_time." (I) SlurmHC: started healthcheck.\n";
+    print join("\n",@info)."\n" if @info;
+    print slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.\n\n";
     print "SlurmHC - warnings ###################################\n" if @warnings;
     print join("\n",@warnings)."\n\n";
     print "SlurmHC - errors #####################################\n" if @errors;
