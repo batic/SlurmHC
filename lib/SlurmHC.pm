@@ -15,21 +15,22 @@ BEGIN {
 sub new {
     my ($class, %parameters) = @_;
 
+    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running)=undef;
+
     my $self = bless {
-	error   => @errors,
-	warnings => @warnings,
-	info => @info,
-	tests => %tests,
+	error        => @errors,
+	warnings     => @warnings,
+	info         => @info,
+	tests        => %tests,
 	test_results => %test_results,
-	hostname => '',
-	time_running => 0,
-	hc_start_time => 0,
+	hostname     => '',
+	time_running => ''
     }, ref ($class) || $class;
 
     $hostname = `hostname`;
     chomp($hostname);
-    
-    $hc_start_time=slurm_time();
+
+    $self->Info("SlurmHC","Started healthcheck.");
 
     return $self;
 }
@@ -74,7 +75,7 @@ sub import {
 	else{
 	    #print "All ok with package $package\n";
 	    $tests{$package}=0; #the test has not yet been run
-	    $test_results{$package}=undef; #for the moment the test result is unknown
+	    $test_results{$package}=-1; #for the moment the test result is unknown
 	}
     }
 
@@ -88,7 +89,7 @@ sub run {
 
     #start timing
     my $start_time=[gettimeofday]; #this will be needed for total run time
-    
+
     while(@_){
 	my $test=shift;
 	my $args=shift;
@@ -105,25 +106,24 @@ sub run {
 	}
     }
 
-    #stop timing and add elapsed time
-    my $end_time = [gettimeofday];
-    $time_running+= tv_interval $start_time, $end_time;
-    
     my $ret=0;
     while( my ($k, $v) = each %test_results){
 	$ret+=$v;
     }
+
+    #stop timing and add elapsed time
+    my $end_time = [gettimeofday];
+    $time_running+= tv_interval $start_time, $end_time;
+
     return ($ret>0) ? 1 : 0;
 }
 
 sub Status {
     my $self=shift;
     my $test=shift;
+    $test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
 
-    #return test result if test has been defined
-    #but test result may be undef (since might not have been run yet)
-    #return -1 if not defined
-
+    #return test result; -1 means it has not been run yet
     return (defined $tests{$test}) ? $test_results{$test} : -1;
 }
 
@@ -135,6 +135,12 @@ sub slurm_time {
 sub Info {
     my ($self, $caller, $message) = @_;
     push @info, slurm_time." (I) $caller: $message";
+
+    #replace info about running time 
+    if(defined $time_running){
+	@info = grep { $_ !~ qr/time elapsed testing/ } @info;
+	push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.";
+    }
 }
 
 sub Warning {
@@ -150,23 +156,20 @@ sub Error {
 
 sub Print {
     print "SlurmHC - info #######################################\n";
-    print $hc_start_time." (I) SlurmHC: started healthcheck.\n";
     print join("\n",@info)."\n" if @info;
-    print slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.\n\n";
     print "SlurmHC - warnings ###################################\n" if @warnings;
     print join("\n",@warnings)."\n\n";
     print "SlurmHC - errors #####################################\n" if @errors;
     print join("\n",@errors)."\n\n";
-}	
+}
 
 sub Mail {
-    my $self = undef;
+    my $self;
     $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
- 
+
     my @temp = ( 'matej.batic@ijs.si', @_);  
     my %mailto = map { $_, 1 } @temp;
 
-    
     open(my $mailx, "|-", "mailx","-s","[SlurmHC] $hostname",join(',',keys %mailto));
     print $mailx join("\n",@info)."\n" if (@info);
     print $mailx join("\n",@messages)."\n" if (@messages);
@@ -205,7 +208,7 @@ sub Mail {
         Disk => \{ mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" }
     );
     $hc->Print();
- 
+
 
 =head1 AUTHOR
 
@@ -219,7 +222,7 @@ sub Mail {
     it and/or modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
-    
+
     Other modules(tests) from SlurmHC.
 
 =cut

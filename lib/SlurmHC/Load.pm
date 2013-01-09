@@ -5,7 +5,7 @@ BEGIN{
     use parent 'SlurmHC';
     use vars qw($VERSION);
 }
-    
+
 sub n_cpu {
     my @ncpu = grep(/^processor/,`cat /proc/cpuinfo`);
     return $#ncpu+1;
@@ -14,7 +14,7 @@ sub n_cpu {
 
 sub run{
     my $self;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Load'); 
+    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Load');
     my $parent = shift;
 
     #by default only run 15min average test
@@ -27,15 +27,15 @@ sub run{
     #check if arguments are positive
     #undefine if not, keep only 15min average
     #talk to AF for upper limits!
-    if($arg{load_max_1min}<0.){
+    if(defined $arg{load_max_1min} and $arg{load_max_1min}<0.){
 	$arg{load_max_1min}=undef;
 	$parent->Warning((caller(0))[3],"Negative limit for 1min average!");
     }
-    if($arg{load_max_5min}<0.){
+    if(defined $arg{load_max_5min} and $arg{load_max_5min}<0.){
 	$arg{load_max_5min}=undef;
 	$parent->Warning((caller(0))[3],"Negative limit for 5min average!");
     }
-    if($arg{load_max_15min}<0.0){
+    if(defined $arg{load_max_15min} and $arg{load_max_15min}<0.0){
 	$arg{load_max_15min}=1.5;
 	$parent->Warning((caller(0))[3],"Negative limit for 15min average!");
     }
@@ -44,7 +44,7 @@ sub run{
        and not defined $arg{load_max_15min}){
 	$arg{load_max_15min}=1.5;
     }
-    
+
     my $ncpu=n_cpu();
 
     open(LOAD, "/proc/loadavg") or do {
@@ -85,12 +85,12 @@ sub run{
 	    $error+=3;
 	}
     }
-    
+
     my $total_error_check=0;
     $total_error_check+=1 if defined $arg{load_max_1min};
     $total_error_check+=2 if defined $arg{load_max_5min};
     $total_error_check+=3 if defined $arg{load_max_15min};
-    
+
     if($error>0){
       if($error==$total_error_check){
 	  $parent->Error((caller(0))[3],
@@ -150,7 +150,7 @@ sub run{
         Load => \{ load_max_15min=> 1.5 }, 
     );
     $hc->Print();
- 
+
 
 =head1 AUTHOR
 
@@ -164,7 +164,7 @@ sub run{
     it and/or modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
-    
+
     SlurmHC.
 
 =cut

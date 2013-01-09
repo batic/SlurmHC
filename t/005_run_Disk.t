@@ -22,12 +22,12 @@ warning_like { is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=
     "Check for warning with 240G warning limit.";
 
 #check /data0 with warning 240GB and error 220GB
-is $object->run( 
+is $object->run(
     Disk => \{ mount_point=>"/data0", warning_limit=>"240G", error_limit=>"220G" } ), 1,
     "Check /data0 with warning 240GB and error 220GB.";
 
-warnings_like { is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"40", error_limit=>"20" } ), 0, "Check /data0 with defaults because of config error." } 
-[ 
+warnings_like { is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"40", error_limit=>"20" } ), 0, "Check /data0 with defaults because of config error." }
+[
   qr/Configuration error/,
   qr/Configuration error/
 ],
