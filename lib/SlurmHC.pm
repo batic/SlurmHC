@@ -19,43 +19,44 @@ BEGIN {
 
 sub new {
     my $class=shift;
-    my %options =
-	(
-	 logfile => '/var/log/slurmHC.log',
-	 verbosity => 'errors',
-	 @_
-	);
-
-    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running,%log)=undef;
-
+    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running, %log, %options)=undef;
+    
     my $self = bless {
 	error        => @errors,
 	warnings     => @warnings,
 	info         => @info,
 	tests        => %tests,
 	test_results => %test_results,
-	hostname     => '',
-	time_running => '',
 	options      => %options,
+	hostname     => '',
+	time_running => 0,
 	log          => %log,
     }, ref ($class) || $class;
 
-    foreach (keys(%options)) {
-	die ref($class) . "::new: must specify value for $_" 
-	    if (!defined $options{$_});
-	print "SlurmHC::".$_.": ".$options{$_}."\n";
-    }
-    
-    $hostname = `hostname`;
-    chomp($hostname);
-
-    #start log
-    $log=SlurmHC::Log->new( file=>$options{logfile}, verbosity=>$options{verbosity} );
-
-    #start info
-    $self->Info("SlurmHC","Started healthcheck.");
+    $self->_init(@_);
 
     return $self;
+}
+
+sub _init{
+  my $self=shift;
+  my %arg = ( logfile=>"/var/log/SlurmHC.log", verbosity=>"error", @_ );
+
+  foreach (keys(%arg)) {
+    die ref($class) . "::new: must specify value for $_" unless $_ =~ /logfile|verbosity/;
+    $options{$_}=$arg{$_};
+  }
+  
+  $self{hostname} = `hostname`;
+  chomp($self{hostname});
+
+  $self{time_running}=0;
+  
+  #start log
+  $log=SlurmHC::Log->new( file=>$options{logfile}, verbosity=>$options{verbosity} );
+
+  #start info
+  $self->Info("SlurmHC","Started healthcheck.");
 }
 
 sub list_testmodules {
@@ -83,7 +84,6 @@ sub list_testmodules {
 
 sub import {
     my $self = shift;
-    my $caller = caller;
 
     my @packages =  map { 'SlurmHC::' . $_ } @_;
     @packages = $self->list_testmodules() unless @_;
@@ -136,7 +136,7 @@ sub run {
 
     #stop timing and add elapsed time
     my $end_time = [gettimeofday];
-    $time_running+= tv_interval $start_time, $end_time;
+    $self{time_running} += tv_interval $start_time, $end_time;
 
     return ($ret>0) ? 1 : 0;
 }
@@ -160,14 +160,13 @@ sub Info {
     my $inf=slurm_time." (I) $caller: $message";
     push @info, $inf;
     
-    print "IN INFO: $options{verbosity}\n" if $log->Verbosity() =~ /all|info|debug/;
-    $log->log($inf) if $log->Verbosity() =~ /all|info|debug/;
+    $log->log($inf) if $options{verbosity} =~ /all|info|debug/;
 
     #replace info about running time 
-    if(defined $time_running){
-	@info = grep { $_ !~ qr/time elapsed testing/ } @info;
-	push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.";
-	$log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.") if $options{verbosity} =~ /all|debug/;
+    if(defined $self{time_running}){
+      @info = grep { $_ !~ qr/time elapsed testing/ } @info;
+      push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.";
+      $log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.") if $options{verbosity} =~ /debug/;
     }
 }
 
@@ -190,9 +189,9 @@ sub Print {
     print "SlurmHC - info #######################################\n";
     print join("\n",@info)."\n" if @info;
     print "SlurmHC - warnings ###################################\n" if @warnings;
-    print join("\n",@warnings)."\n\n";
+    print join("\n",@warnings)."\n\n" if @warnings;
     print "SlurmHC - errors #####################################\n" if @errors;
-    print join("\n",@errors)."\n\n";
+    print join("\n",@errors)."\n\n" if @errors;
 }
 
 sub Mail {

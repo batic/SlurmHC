@@ -57,7 +57,8 @@ sub log {
   my @log_data = @_;
 
   foreach my $line (@log_data){
-    $self->{fh}->print($line);
+    chomp($line);
+    $self->{fh}->print($line."\n");
   }
 }
 
