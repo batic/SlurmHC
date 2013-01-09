@@ -40,7 +40,7 @@ sub new {
 
 sub _init{
   my $self=shift;
-  my %arg = ( logfile=>"/var/log/SlurmHC.log", verbosity=>"error", @_ );
+  my %arg = ( logfile=>"/tmp/SlurmHC.log", verbosity=>"error", @_ );
 
   foreach (keys(%arg)) {
     die ref($class) . "::new: must specify value for $_" unless $_ =~ /logfile|verbosity/;
