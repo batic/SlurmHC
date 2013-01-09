@@ -3,19 +3,30 @@ package SlurmHC;
 BEGIN {
     use strict;
     use Carp qw(carp);
+
     use File::Spec::Functions qw(catdir catfile splitdir);
     use File::Basename 'fileparse';
+
     use POSIX qw(strftime);
     use Time::HiRes qw(gettimeofday tv_interval);
+
+    require SlurmHC::Log;
 
     use vars qw($VERSION);
     $VERSION     = '0.01';
 }
 
-sub new {
-    my ($class, %parameters) = @_;
 
-    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running)=undef;
+sub new {
+    my $class=shift;
+    my %options =
+	(
+	 logfile => '/var/log/slurmHC.log',
+	 verbosity => 'errors',
+	 @_
+	);
+
+    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running,%log)=undef;
 
     my $self = bless {
 	error        => @errors,
@@ -24,12 +35,24 @@ sub new {
 	tests        => %tests,
 	test_results => %test_results,
 	hostname     => '',
-	time_running => ''
+	time_running => '',
+	options      => %options,
+	log          => %log,
     }, ref ($class) || $class;
 
+    foreach (keys(%options)) {
+	die ref($class) . "::new: must specify value for $_" 
+	    if (!defined $options{$_});
+	print "SlurmHC::".$_.": ".$options{$_}."\n";
+    }
+    
     $hostname = `hostname`;
     chomp($hostname);
 
+    #start log
+    $log=SlurmHC::Log->new( file=>$options{logfile}, verbosity=>$options{verbosity} );
+
+    #start info
     $self->Info("SlurmHC","Started healthcheck.");
 
     return $self;
@@ -48,9 +71,9 @@ sub list_testmodules {
     for my $file (grep /\.pm$/, readdir $dir) {
       next if -d catfile splitdir($path), $file;
 
-      # Module found
+      # Module found, Log is not test!
       my $class = "${namespace}::" . fileparse $file, qr/\.pm/;
-      push @modules, $class unless $found{$class}++;
+      push @modules, $class unless $found{$class}++ or $class=~/Log/;
     }
   }
 
@@ -134,24 +157,33 @@ sub slurm_time {
 
 sub Info {
     my ($self, $caller, $message) = @_;
-    push @info, slurm_time." (I) $caller: $message";
+    my $inf=slurm_time." (I) $caller: $message";
+    push @info, $inf;
+    
+    print "IN INFO: $options{verbosity}\n" if $log->Verbosity() =~ /all|info|debug/;
+    $log->log($inf) if $log->Verbosity() =~ /all|info|debug/;
 
     #replace info about running time 
     if(defined $time_running){
 	@info = grep { $_ !~ qr/time elapsed testing/ } @info;
 	push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.";
+	$log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$time_running." seconds.") if $options{verbosity} =~ /all|debug/;
     }
 }
 
 sub Warning {
     my ($self, $caller, $message) = @_;
-    push @warnings, slurm_time." (W) $caller: $message";
-    warn("(W) ".slurm_time." $caller: $message");
+    my $warn=slurm_time." (I) $caller: $message";
+    push @warnings, $warn;
+    warn("(W) ".$warn);
+    $log->log($warn) if $options{verbosity} =~ /all|warn|debug/;
 }
 
 sub Error {
     my ($self, $caller, $message) = @_;
-    push @errors, slurm_time." (E) $caller: $message";
+    my $err=slurm_time." (E) $caller: $message";
+    push @errors, $err;
+    $log->log($err) if $options{verbosity} =~ /all|err|debug/;
 }
 
 sub Print {
