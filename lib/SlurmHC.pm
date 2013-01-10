@@ -20,7 +20,7 @@ BEGIN {
 sub new {
     my $class=shift;
     my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running, %log, %options)=undef;
-    
+
     my $self = bless {
 	error        => @errors,
 	warnings     => @warnings,
@@ -46,12 +46,12 @@ sub _init{
     die ref($class) . "::new: must specify value for $_" unless $_ =~ /logfile|verbosity/;
     $options{$_}=$arg{$_};
   }
-  
+
   $self{hostname} = `hostname`;
   chomp($self{hostname});
 
   $self{time_running}=0;
-  
+
   #start log
   $log=SlurmHC::Log->new( file=>$options{logfile}, verbosity=>$options{verbosity} );
 
@@ -159,7 +159,7 @@ sub Info {
     my ($self, $caller, $message) = @_;
     my $inf=slurm_time." (I) $caller: $message";
     push @info, $inf;
-    
+
     $log->log($inf) if $options{verbosity} =~ /all|info|debug/;
 
     #replace info about running time 

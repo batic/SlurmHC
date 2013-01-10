@@ -91,12 +91,9 @@ sub log {
     #!/usr/bin/perl
 
     use SlurmHC qw( Load );
-    my $hc=SlurmHC->new();
-    $hc->run(
-        Load => \{ load_max_15min=> 1.5 }, 
-    );
-    $hc->Print();
+    my $hc=SlurmHC->new( logfile=>"/path/to/logfile", verbosity=>"error" );
 
+    #possible values for verbosity: all, error, warn, info, debug
 
 =head1 AUTHOR
 
