@@ -1,12 +1,11 @@
 package SlurmHC::Log;
 
-BEGIN{
-    use parent 'SlurmHC';
+use strict;
+use warnings;
+use FileHandle;
 
-    use strict;
-    use warnings;
-    use FileHandle;
-}
+use parent 'SlurmHC';
+
 
 sub run{
     return 0;
@@ -14,43 +13,31 @@ sub run{
 
 sub new {
   my $class= shift;
+  my $arg = { @_ } ;
+
   my $self = bless {
-		    options => {},
+		    options => {
+				verbosity => "error",
+				file      => "/tmp/SlurmHC.log"
+			       },
 		   }, ref ($class) || $class;
-  $self->_init(@_);
-  return $self;
-}
 
-sub _init {
-  my $self=shift;
-  my %arg =
-    (
-     file 	=> '/tmp/slurmHC.log',
-     verbosity  => 'all',
-     @_
-    );
+  $self->{options}{verbosity}=$arg->{verbosity} if $arg->{verbosity}=~/all|error|info|warn|debug/;
+  $self->{options}{file}=$arg->{file} if defined $arg->{file};
 
-  $options{verbosity}="error";
-  $options{verbosity}=$arg{verbosity} if $arg{verbosity}=~/all|error|info|warn|debug/;
-  $options{file}="/tmp/SlurmHC.log";
-  $options{file}=$arg{file} if defined $arg{file};
-
-  # while( my($k,$v) = each %arg){
-  #   print "SlurmHC::Log:$k = $v\n";
-  # }
-
-  $self->{fh} = new FileHandle ">>$options{file}";
+  $self->{fh} = new FileHandle ">>$self->{options}{file}";
   if (!defined $self->{fh}) {
-    die "Unable to write to $options{file}";
+    die "Unable to write to $self->{options}{file}";
   }
   $self->{fh}->autoflush();
 
+  return $self;
 }
 
 sub Verbosity {
   my $self=shift;
-  print "In Verbosity, verbosity = $options{verbosity}\n";
-  return $options{verbosity};
+  print "In Verbosity, verbosity = $self->{options}{verbosity}\n";
+  return $self->{options}{verbosity};
 }
 
 sub DESTROY {
@@ -66,8 +53,8 @@ sub log {
 
   foreach my $line (@log_data){
     chomp($line);
-    $self->{fh}->print($line.'\n') or do {
-      warn("Could not write \"$line\" to $options{file}:\n@_ \n");
+    $self->{fh}->print($line."\n") or do {
+      warn("Could not write \"$line\" to $self->{options}{file}:\n@_ \n");
       return 1;
     };
   }
