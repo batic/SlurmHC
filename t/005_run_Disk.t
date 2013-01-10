@@ -17,12 +17,11 @@ my $res={
 };
 
 #following tests should not fail
-push $res->{info}, re("Tested load average is ok.");
+push $res->{info}, re("All ok");
 
 #try running disk space test
 my $a=SlurmHC::Disk::run( );
-#print Dumper($a);
-push $res->{info}, re("All ok");
+print Dumper($a);
 cmp_deeply $a, $res, "Default Disk test should be ok.";
 
 
