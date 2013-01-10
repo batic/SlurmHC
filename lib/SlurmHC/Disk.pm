@@ -66,7 +66,7 @@ sub run{
     if($avail<$error_limit){
 	# not enough mount_point space.
       push $results->{error},		       
-	(caller(0))[3]." $mount_point filled up: only "
+	(caller(0))[3]." Not enough diskspace on $mount_point: only "
 	  .sprintf("%.2f",$avail/1024/1024)
 	    ."G available, should be above $arg->{error_limit}.";
       $results->{result}=1;

@@ -33,23 +33,27 @@ push $res->{warning}, re("getting filled up");
 $a=SlurmHC::Disk::run( mount_point=>"/data0", warning_limit=>"240G", error_limit=>"20G" ); #print Dumper($a);
 cmp_deeply $a, $res, "I should get a warning, but disk space is still ok.";
 
+#check for configuration error warning
+$res->{warning}=[];
+push $res->{warning}, re("Configuration error");
+$a=SlurmHC::Disk::run( mount_point=>"/data0", warning_limit=>"40", error_limit=>"20G" ); #print Dumper($a);
+cmp_deeply $a, $res, "I should get a warning, but disk space is still ok.";
 
-# is $object->run( Disk => \{  } ) , 0 ,
-#     "Check /data0 with warning 40GB and error 20GB.";
+push $res->{warning}, re("Configuration error"); #two configuration errors now
+$a=SlurmHC::Disk::run( mount_point=>"/data0", warning_limit=>"40", error_limit=>"20" ); #print Dumper($a);
+cmp_deeply $a, $res, "I should get a warning, but disk space is still ok.";
 
-# #check /data0 with warning 240GB and error 20GB
-# warning_like { is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"240G", error_limit=>"20G" } ) , 0,
-#     "Check /data0 with warning 240GB and error 20GB." } qr/getting filled up/,
-#     "Check for warning with 240G warning limit.";
+#check for error due to wrong mount point
+$res->{info}=[];
+$res->{warning}=[];
+$res->{result}=1;
+push $res->{error}, re("does not exists");
+$a=SlurmHC::Disk::run( mount_point=>"/dataZZZ" ); #print Dumper($a);
+cmp_deeply $a, $res, "/dataZZZ does not exist.";
 
-# #check /data0 with warning 240GB and error 220GB
-# is $object->run(
-#     Disk => \{ mount_point=>"/data0", warning_limit=>"240G", error_limit=>"220G" } ), 1,
-#     "Check /data0 with warning 240GB and error 220GB.";
+#check for error due to not enough space
+$res->{error}=[];
+push $res->{error}, re("Not enough diskspace on");
+$a=SlurmHC::Disk::run( mount_point=>"/data0", error_limit=>"220G" ); #print Dumper($a);
+cmp_deeply $a, $res, "Not enough diskspace if 220G are needed.";
 
-# warnings_like { is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"40", error_limit=>"20" } ), 0, "Check /data0 with defaults because of config error." }
-# [
-#   qr/Configuration error/,
-#   qr/Configuration error/
-# ],
-#     "Check /data0 with warning 40 and error 20 - expecting a warning in config.";
