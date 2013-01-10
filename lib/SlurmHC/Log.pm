@@ -22,12 +22,12 @@ sub new {
 			       },
 		   }, ref ($class) || $class;
 
-  $self->{options}{verbosity}=$arg->{verbosity} if $arg->{verbosity}=~/all|error|info|warn|debug/;
-  $self->{options}{file}=$arg->{file} if defined $arg->{file};
+  $self->{options}->{verbosity}=$arg->{verbosity} if $arg->{verbosity}=~/all|error|info|warn|debug/;
+  $self->{options}->{file}=$arg->{file} if defined $arg->{file};
 
-  $self->{fh} = new FileHandle ">>$self->{options}{file}";
+  $self->{fh} = new FileHandle ">>$self->{options}->{file}";
   if (!defined $self->{fh}) {
-    die "Unable to write to $self->{options}{file}";
+    die "Unable to write to $self->{options}->{file}";
   }
   $self->{fh}->autoflush();
 
@@ -36,8 +36,8 @@ sub new {
 
 sub Verbosity {
   my $self=shift;
-  print "In Verbosity, verbosity = $self->{options}{verbosity}\n";
-  return $self->{options}{verbosity};
+  print "In Verbosity, verbosity = $self->{options}->{verbosity}\n";
+  return $self->{options}->{verbosity};
 }
 
 sub DESTROY {
@@ -54,7 +54,7 @@ sub log {
   foreach my $line (@log_data){
     chomp($line);
     $self->{fh}->print($line."\n") or do {
-      warn("Could not write \"$line\" to $self->{options}{file}:\n@_ \n");
+      warn("Could not write \"$line\" to $self->{options}->{file}:\n@_ \n");
       return 1;
     };
   }

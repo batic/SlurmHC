@@ -1,62 +1,51 @@
 package SlurmHC;
 
-BEGIN {
-    use strict;
-    use Carp qw(carp);
+use vars qw($VERSION);
+$VERSION     = '0.01';
 
-    use File::Spec::Functions qw(catdir catfile splitdir);
-    use File::Basename 'fileparse';
+use strict;
+use warnings;
 
-    use POSIX qw(strftime);
-    use Time::HiRes qw(gettimeofday tv_interval);
+use Carp qw(carp);
+use File::Spec::Functions qw(catdir catfile splitdir);
+use File::Basename 'fileparse';
+use POSIX qw(strftime);
+use Time::HiRes qw(gettimeofday tv_interval);
+use Data::Dumper;
 
-    require SlurmHC::Log;
-
-    use vars qw($VERSION);
-    $VERSION     = '0.01';
-}
-
+use SlurmHC::Log;
 
 sub new {
-    my $class=shift;
-    my (@errors, @warnings, @info, %tests, %test_results, $hostname, $time_running, %log, %options)=undef;
+  my $class=shift;
 
-    my $self = bless {
-	error        => @errors,
-	warnings     => @warnings,
-	info         => @info,
-	tests        => %tests,
-	test_results => %test_results,
-	options      => %options,
-	hostname     => '',
-	time_running => 0,
-	log          => %log,
-    }, ref ($class) || $class;
+  my $self = bless {
+		    tests        => {},
+		    logging      => { 
+				     file      => "/tmp/SlurmHC.log",
+				     verbosity => "error"
+				    },
+		    log          => {},
+		    hostname     => '',
+		    time_running => 0,
+		   }, ref ($class) || $class;
 
-    $self->_init(@_);
-
-    return $self;
-}
-
-sub _init{
-  my $self=shift;
-  my %arg = ( logfile=>"/tmp/SlurmHC.log", verbosity=>"error", @_ );
-
-  foreach (keys(%arg)) {
-    die ref($class) . "::new: must specify value for $_" unless $_ =~ /logfile|verbosity/;
-    $options{$_}=$arg{$_};
+  my $arg = { %{$self->{logging}}, @_ };
+  foreach (keys($arg)) {
+    die ref($class) . "::new: Unknown option $_" unless defined $self->{logging}->{$_};
   }
 
-  $self{hostname} = `hostname`;
-  chomp($self{hostname});
+  $self->{hostname} = `hostname`;
+  chomp($self->{hostname});
 
-  $self{time_running}=0;
-
+  $self->{time_running}=0;
+    
   #start log
-  $log=SlurmHC::Log->new( file=>$options{logfile}, verbosity=>$options{verbosity} );
-
+  $self->{log}=SlurmHC::Log->new( %$arg );
+    
   #start info
-  $self->Info("SlurmHC","Started healthcheck.");
+  #$self->Info("SlurmHC","Started healthcheck.");
+
+  return $self;
 }
 
 sub list_testmodules {
@@ -79,134 +68,133 @@ sub list_testmodules {
   }
 
   return @modules;
-
 }
 
 sub import {
-    my $self = shift;
+  my $self=shift;
 
-    my @packages =  map { 'SlurmHC::' . $_ } @_;
-    @packages = $self->list_testmodules() unless @_;
+  my @packages =  map { 'SlurmHC::' . $_ } @_;
+  @packages = $self->list_testmodules() unless @_;
 
-    foreach my $package ( @packages )
-    {
-	eval "require $package; 1";
-	if( $@ )
-	{
-	    carp "Could not require $package: $@";
-	}
-	else{
-	    #print "All ok with package $package\n";
-	    $tests{$package}=0; #the test has not yet been run
-	    $test_results{$package}=-1; #for the moment the test result is unknown
-	}
-    }
+  foreach my $package ( @packages ) {
+    eval "require $package; 1";
+    if ( $@ ) {
+      carp "Could not require $package: $@";
+    } 
+  }
 
 }
 
 sub VERSION { return $VERSION }
 
 sub run {
-    my $self=shift;
-    shift if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
+  my $self=shift;
+  die "Each test should be called with arguments!" if (scalar(@_) %2 ); #default tests should also be called with arguments !!!
 
-    #start timing
-    my $start_time=[gettimeofday]; #this will be needed for total run time
+  #start timing
+  my $start_time=[gettimeofday]; #this will be needed for total run time
 
-    while(@_){
-	my $test=shift;
-	my $args=shift;
-	$test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
-	if( defined $tests{$test} ){
-	    if( defined $$args ){
-		$test_results{$test}=$test->run( %$$args );
-		$tests{$test}++; #the test has been run
-	    }
-	    else{
-		$test_results{$test}=$test->run();
-		$tests{$test}++; #the test has been run
-	    }
-	}
-    }
+  my $do = { @_ };
+  
+  foreach my $test (keys $do){
+    my $testmodule='SlurmHC::'.$test;
+    $self->{tests}->{$test}={
+			     info      => [],
+			     warning   => [],
+			     error     => [],
+			     result    => -1
+			    };
+    use Data::Dumper;
+    print "Now will run $test with args \n".Dumper($do->{$test})."\n";
+    my $hashref=$do->{$test};
+    print Dumper(%$hashref);
+    $self->{tests}->{$test}=$testmodule->run( %$hashref );
+  }
 
-    my $ret=0;
-    while( my ($k, $v) = each %test_results){
-	$ret+=$v;
-    }
+  my $ret=0;
+  foreach my $test (keys $self->{tests}){
+    $ret+=$self->{tests}->{$test}->{result};
+  }
+  #stop timing and add elapsed time
+  my $end_time = [gettimeofday];
+  $self->{time_running} += tv_interval $start_time, $end_time;
 
-    #stop timing and add elapsed time
-    my $end_time = [gettimeofday];
-    $self{time_running} += tv_interval $start_time, $end_time;
-
-    return ($ret>0) ? 1 : 0;
+  return ($ret>0) ? 1 : 0;
 }
 
 sub Status {
-    my $self=shift;
-    my $test=shift;
-    $test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
+  my $self=shift;
+  my $test=shift;
+  $test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
 
-    #return test result; -1 means it has not been run yet
-    return (defined $tests{$test}) ? $test_results{$test} : -1;
+  #return test result; -1 means it has not been run yet
+  return $self->{tests}->{$test}->{result};
 }
 
 sub slurm_time {
-    my $str=strftime "[%FT%H:%M:%S]", localtime;
-    return $str;
+  my $str=strftime "[%FT%H:%M:%S]", localtime;
+  return $str;
 }
 
-sub Info {
-    my ($self, $caller, $message) = @_;
-    my $inf=slurm_time." (I) $caller: $message";
-    push @info, $inf;
+# sub Info {
+#   my ($self, $caller, $message) = @_;
+#   my $inf=slurm_time." (I) $caller: $message";
+#   push @info, $inf;
 
-    $log->log($inf) if $options{verbosity} =~ /all|info|debug/;
+#   $log->log($inf) if $options{verbosity} =~ /all|info|debug/;
 
-    #replace info about running time 
-    if(defined $self{time_running}){
-      @info = grep { $_ !~ qr/time elapsed testing/ } @info;
-      push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.";
-      $log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.") if $options{verbosity} =~ /debug/;
-    }
-}
+#   #replace info about running time 
+#   if (defined $self{time_running}) {
+#     @info = grep { $_ !~ qr/time elapsed testing/ } @info;
+#     push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.";
+#     $log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.") if $options{verbosity} =~ /debug/;
+#   }
+# }
 
-sub Warning {
-    my ($self, $caller, $message) = @_;
-    my $warn=slurm_time." (I) $caller: $message";
-    push @warnings, $warn;
-    warn("(W) ".$warn);
-    $log->log($warn) if $options{verbosity} =~ /all|warn|debug/;
-}
+# sub Warning {
+#   my ($self, $caller, $message) = @_;
+#   my $warn=slurm_time." (I) $caller: $message";
+#   push @warnings, $warn;
+#   warn("(W) ".$warn);
+#   $log->log($warn) if $options{verbosity} =~ /all|warn|debug/;
+# }
 
-sub Error {
-    my ($self, $caller, $message) = @_;
-    my $err=slurm_time." (E) $caller: $message";
-    push @errors, $err;
-    $log->log($err) if $options{verbosity} =~ /all|err|debug/;
-}
+# sub Error {
+#   my ($self, $caller, $message) = @_;
+#   my $err=slurm_time." (E) $caller: $message";
+#   push @errors, $err;
+#   $log->log($err) if $options{verbosity} =~ /all|err|debug/;
+# }
 
 sub Print {
-    print "SlurmHC - info #######################################\n";
-    print join("\n",@info)."\n" if @info;
-    print "SlurmHC - warnings ###################################\n" if @warnings;
-    print join("\n",@warnings)."\n\n" if @warnings;
-    print "SlurmHC - errors #####################################\n" if @errors;
-    print join("\n",@errors)."\n\n" if @errors;
+  my $self=shift;
+
+  foreach my $test (keys $self->{tests}){
+    if($self->{tests}->{$test}->{info}){
+      print "SlurmHC - info #######################################\n";
+      print Dumper($self->{tests}->{$test});
+      #print join("\n",$self->{tests}->{$test}->{info})."\n"
+    }
+  }
+#   print "SlurmHC - warnings ###################################\n" if @warnings;
+#   print join("\n",@warnings)."\n\n" if @warnings;
+#   print "SlurmHC - errors #####################################\n" if @errors;
+#   print join("\n",@errors)."\n\n" if @errors;
 }
 
-sub Mail {
-    my $self;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
+# sub Mail {
+#   my $self;
+#   $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC'); 
 
-    my @temp = ( 'matej.batic@ijs.si', @_);  
-    my %mailto = map { $_, 1 } @temp;
+#   my @temp = ( 'matej.batic@ijs.si', @_);  
+#   my %mailto = map { $_, 1 } @temp;
 
-    open(my $mailx, "|-", "mailx","-s","[SlurmHC] $hostname",join(',',keys %mailto));
-    print $mailx join("\n",@info)."\n" if (@info);
-    print $mailx join("\n",@messages)."\n" if (@messages);
-    print $mailx join("\n",@errors)."\n" if (@errors);
-    close($mailx);
-}
+#   open(my $mailx, "|-", "mailx","-s","[SlurmHC] $hostname",join(',',keys %mailto));
+#   print $mailx join("\n",@info)."\n" if (@info);
+#   print $mailx join("\n",@messages)."\n" if (@messages);
+#   print $mailx join("\n",@errors)."\n" if (@errors);
+#   close($mailx);
+# }
 
 1;
 # The preceding line will help the module return a true value

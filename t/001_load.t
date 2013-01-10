@@ -5,7 +5,7 @@
 use Test::More 'no_plan';
 
 #try to: use SlurmHC
-BEGIN { use_ok( 'SlurmHC' ); }
+use_ok( 'SlurmHC' );
 
 #construct new SlurmHC object and check if it is really a SlurmHC
 my $object = SlurmHC->new ();
