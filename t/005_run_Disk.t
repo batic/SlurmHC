@@ -47,7 +47,7 @@ cmp_deeply $a, $res, "I should get a warning, but disk space is still ok.";
 $res->{info}=[];
 $res->{warning}=[];
 $res->{result}=1;
-push $res->{error}, re("does not exists");
+push $res->{error}, re("does not exist");
 $a=SlurmHC::Disk::run( mount_point=>"/dataZZZ" ); #print Dumper($a);
 cmp_deeply $a, $res, "/dataZZZ does not exist.";
 
