@@ -1,31 +1,28 @@
 package SlurmHC::Nfs;
 
-BEGIN{
-    use strict;
-    use parent 'SlurmHC';
-    use vars qw($VERSION);
-}
-
-sub n_cpu {
-    my @ncpu = grep(/^processor/,`cat /proc/cpuinfo`);
-    return $#ncpu+1;
-}
-
+use strict;
+use parent 'SlurmHC';
+use vars qw($VERSION);
 
 sub run{
     my $self;
     $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Nfs');
-    my $parent = shift;
+    my $arg = { @_ };
 
+    my $results={
+		 info      => [],
+		 warning   => [],
+		 error     => [],
+		 result    => 0
+		};
 
     #list all mounted nfs points
     my @mounts = split /\n+/, `df -t nfs | grep -v Available`;
     if(!@mounts){
       #since we expect at least "some" nfs mounts
-      $parent->Error((caller(0))[3],"No nfs drives mounted.");
-      return 1;
+      push $results->{error}, (caller(0))[3].": No nfs drives mounted.";
+      $results->{result}=1;
     }
-    my $return_val=0;
     foreach (@mounts){
       my @data = split /\s+/, $_;
       my $mountdir = $data[5];
@@ -33,15 +30,17 @@ sub run{
       my $syscall="ls -l $mountdir/ &>/dev/null || exit 1";
       system($syscall);
       if($? != 0){
-	$parent->Error((caller(0))[3],"$mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8));
-	$return_val=1;
+	push $results->{error},
+	  (caller(0))[3].": $mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8);
+	$results->{result}=1;
       }
       else{
-	$parent->Info((caller(0))[3],"$mountpoint ok, mounted on $mountdir.");
+	push $results->{info},
+	  (caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
       }
     }
 
-    return $return_val;
+    return $results;
 }
 
 

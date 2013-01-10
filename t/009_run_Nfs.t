@@ -2,16 +2,35 @@
 
 # t/005_run_Nfs.t - check nfs mountpoints
 
-use Test::More 'no_plan';
-use Test::Warn;
+use Test::Most 'no_plan';
 
 #try to: use SlurmHC
-BEGIN { use_ok( 'SlurmHC', qw( Nfs ) ); }
+use_ok( 'SlurmHC::Nfs' );
 
-#construct new SlurmHC object and check if it is really a SlurmHC
-my $object = SlurmHC->new( logfile=>"./logger.log", verbosity=>"debug" );
-isa_ok ($object, 'SlurmHC');
+#check nfs
+my $a=SlurmHC::Nfs::run();
+is $a->{result}, 0, "Nfs result is ok.";
+like $a->{info}[0], qr/ok, mounted on/, "Nfs info is ok.";
 
-#check /data0 with warning 40GB and error 20GB
-is $object->run( Nfs => \{} ) , 0 ,
-    "Check Nfs, hopefully no problems no so the test will pass.";
+TODO:{
+    local $TODO = 'This test might not work on any other machine.';
+
+    #slightly wrong way to test, but right now it works
+    my $res={
+	info      => [],
+	warning   => [],
+	error     => [],
+	result    => 0
+    };
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d02.";
+    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/pikolit/d0/nfs.";
+    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /net/pikolit/d0/nfs.";
+    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/sl5.x86_64-run/net/pikolit/d0/nfs.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn006:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn006/d01.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d02 ok, mounted on /net/f9sn007/d02.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn007/d02.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn007/d01.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d01 ok, mounted on /net/f9sn007/d01.";
+
+    cmp_deeply $a, $res, "All ok with results.";
+}	   
