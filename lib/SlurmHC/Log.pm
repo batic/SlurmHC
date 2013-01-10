@@ -40,7 +40,9 @@ sub _init {
   # }
 
   $self->{fh} = new FileHandle ">>$options{file}";
-  die "Unable to write to $options{file}" if (!defined $self->{fh});
+  if (!defined $self->{fh}) {
+    die "Unable to write to $options{file}";
+  }
   $self->{fh}->autoflush();
 
 }
@@ -54,7 +56,7 @@ sub Verbosity {
 sub DESTROY {
   #close filehandle
   my $self = shift;
-  $self->{fh}->close;
+  $self->{fh}->close if defined $self->{fh};
   undef $self->{fh};
 }
 
@@ -64,8 +66,13 @@ sub log {
 
   foreach my $line (@log_data){
     chomp($line);
-    $self->{fh}->print($line."\n");
+    $self->{fh}->print($line.'\n') or do {
+      warn("Could not write \"$line\" to $options{file}:\n@_ \n");
+      return 1;
+    };
   }
+
+  return 0;
 }
 
 
