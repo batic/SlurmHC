@@ -20,13 +20,21 @@ my $res={
 push $res->{info}, re("All ok");
 
 #try running disk space test
-my $a=SlurmHC::Disk::run( );
-print Dumper($a);
+my $a=SlurmHC::Disk::run( ); #print Dumper($a);
 cmp_deeply $a, $res, "Default Disk test should be ok.";
 
 
-# #check /data0 with warning 40GB and error 20GB
-# is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" } ) , 0 ,
+#check /data0 with warning 40GB and error 20GB
+$a=SlurmHC::Disk::run( mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" ); #print Dumper($a);
+cmp_deeply $a, $res, "Disk test should be ok.";
+
+#check for warning
+push $res->{warning}, re("getting filled up");
+$a=SlurmHC::Disk::run( mount_point=>"/data0", warning_limit=>"240G", error_limit=>"20G" ); #print Dumper($a);
+cmp_deeply $a, $res, "I should get a warning, but disk space is still ok.";
+
+
+# is $object->run( Disk => \{  } ) , 0 ,
 #     "Check /data0 with warning 40GB and error 20GB.";
 
 # #check /data0 with warning 240GB and error 20GB

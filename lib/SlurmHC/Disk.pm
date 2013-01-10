@@ -79,13 +79,12 @@ sub run{
 	  ."G available, should be above $arg->{warning_limit}.";
       push $results->{warning},$message;
     }
-    else{
-      #all ok, issue OK info only if there is no warning
-      push $results->{info},
-	(caller(0))[3]." All ok: $mount_point: "
-	  .sprintf("%.2f",$avail/1024/1024)
-	    ."G available.";
-    }
+    
+    #all ok, issue OK info only if there is no warning
+    push $results->{info},
+      (caller(0))[3]." All ok: $mount_point: "
+	.sprintf("%.2f",$avail/1024/1024)
+	  ."G available." unless $results->{result}==1;
 
     return $results;
 }
