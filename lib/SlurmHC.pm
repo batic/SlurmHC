@@ -38,10 +38,10 @@ sub new {
   chomp($self->{hostname});
 
   $self->{time_running}=0;
-    
+
   #start log
   $self->{log}=SlurmHC::Log->new( %$arg );
-    
+
   #start info
   #$self->Info("SlurmHC","Started healthcheck.");
 
@@ -95,19 +95,18 @@ sub run {
   my $start_time=[gettimeofday]; #this will be needed for total run time
 
   my $do = { @_ };
-  
+
   foreach my $test (keys $do){
     my $testmodule='SlurmHC::'.$test;
     $self->{tests}->{$test}={
 			     info      => [],
 			     warning   => [],
 			     error     => [],
-			     result    => -1
+			     result    => -1,
+			     elapsed   => 0,
 			    };
-    use Data::Dumper;
-    print "Now will run $test with args \n".Dumper($do->{$test})."\n";
+
     my $hashref=$do->{$test};
-    print Dumper(%$hashref);
     $self->{tests}->{$test}=$testmodule->run( %$hashref );
   }
 
@@ -125,10 +124,11 @@ sub run {
 sub Status {
   my $self=shift;
   my $test=shift;
-  $test='SlurmHC::'.$test unless $test=~/^SlurmHC::/;
 
-  #return test result; -1 means it has not been run yet
-  return $self->{tests}->{$test}->{result};
+  #return test result if the test is defined:
+  # -1 means the test is scheduled, but has not been run yet
+  # -2 means the test has not been defined/scheduled
+  return (defined $self->{tests}->{$test}) ? $self->{tests}->{$test}->{result} : -2;
 }
 
 sub slurm_time {
