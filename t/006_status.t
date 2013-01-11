@@ -12,10 +12,10 @@ my $object = SlurmHC->new ();
 isa_ok ($object, 'SlurmHC');
 
 #check status, should be "wrong"
-is $object->Status("Disk"), -1, "Disk check status: test not yet run.";
+is $object->Status("Disk"), -2, "Disk check status: test not yet defined.";
 
 #try running
-is $object->run( Disk => \{ mount_point=>"/data0", warning_limit=>"1G", error_limit=>"1G" } ) , 0 ,
+is $object->run( Disk => { mount_point=>"/data0", warning_limit=>"1G", error_limit=>"1G" } ) , 0 ,
     "Check /data0 with warning 1GB and error 1GB.";
 
 #check status, should be ok
