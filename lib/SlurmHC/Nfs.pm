@@ -5,42 +5,44 @@ use parent 'SlurmHC';
 use vars qw($VERSION);
 
 sub run{
-    my $self;
-    $self = shift if ref $_[0] and $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Nfs');
-    my $arg = { @_ };
+  my $self;
+  if ($_[0] || ref $_[0]) {
+    $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Nfs');
+  }
 
-    my $results={
-		 info      => [],
-		 warning   => [],
-		 error     => [],
-		 result    => 0
-		};
+  my $arg = { @_ };
 
-    #list all mounted nfs points
-    my @mounts = split /\n+/, `df -t nfs | grep -v Available`;
-    if(!@mounts){
-      #since we expect at least "some" nfs mounts
-      push $results->{error}, (caller(0))[3].": No nfs drives mounted.";
+  my $results={
+	       info      => [],
+	       warning   => [],
+	       error     => [],
+	       result    => 0
+	      };
+
+  #list all mounted nfs points
+  my @mounts = split /\n+/, `df -t nfs | grep -v Available`;
+  if (!@mounts) {
+    #since we expect at least "some" nfs mounts
+    push $results->{error}, (caller(0))[3].": No nfs drives mounted.";
+    $results->{result}=1;
+  }
+  foreach (@mounts) {
+    my @data = split /\s+/, $_;
+    my $mountdir = $data[5];
+    my $mountpoint = $data[0];
+    my $syscall="ls -l $mountdir/ &>/dev/null || exit 1";
+    system($syscall);
+    if ($? != 0) {
+      push $results->{error},
+	(caller(0))[3].": $mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8);
       $results->{result}=1;
+    } else {
+      push $results->{info},
+	(caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
     }
-    foreach (@mounts){
-      my @data = split /\s+/, $_;
-      my $mountdir = $data[5];
-      my $mountpoint = $data[0];
-      my $syscall="ls -l $mountdir/ &>/dev/null || exit 1";
-      system($syscall);
-      if($? != 0){
-	push $results->{error},
-	  (caller(0))[3].": $mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8);
-	$results->{result}=1;
-      }
-      else{
-	push $results->{info},
-	  (caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
-      }
-    }
+  }
 
-    return $results;
+  return $results;
 }
 
 

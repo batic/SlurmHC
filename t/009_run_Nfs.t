@@ -22,15 +22,15 @@ TODO:{
 	error     => [],
 	result    => 0
     };
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d02.";
     push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/pikolit/d0/nfs.";
     push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /net/pikolit/d0/nfs.";
     push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/sl5.x86_64-run/net/pikolit/d0/nfs.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d01.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d01 ok, mounted on /net/f9sn005/d01.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d02.";
     push $res->{info}, "SlurmHC::Nfs::run: f9sn006:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn006/d01.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d02 ok, mounted on /net/f9sn007/d02.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn007/d02.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn007/d01.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn007:/d01 ok, mounted on /net/f9sn007/d01.";
+    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /net/f9sn005/d02.";
+
 
     cmp_deeply $a, $res, "All ok with results.";
 }	   
