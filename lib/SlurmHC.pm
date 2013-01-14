@@ -20,7 +20,7 @@ sub new {
 
   my $self = bless {
 		    tests        => {},
-		    logging      => { 
+		    logging      => {
 				     file      => "/tmp/SlurmHC.log",
 				     verbosity => "error"
 				    },
@@ -32,6 +32,7 @@ sub new {
   my $arg = { %{$self->{logging}}, @_ };
   foreach (keys($arg)) {
     die ref($class) . "::new: Unknown option $_" unless defined $self->{logging}->{$_};
+    $self->{logging}->{$_}=$arg->{$_};
   }
 
   $self->{hostname} = `hostname`;
@@ -39,11 +40,11 @@ sub new {
 
   $self->{time_running}=0;
 
+  use Data::Dumper;
+  print Dumper($self);
+
   #start log
   $self->{log}=SlurmHC::Log->new( %$arg );
-
-  #start info
-  #$self->Info("SlurmHC","Started healthcheck.");
 
   return $self;
 }
@@ -80,7 +81,7 @@ sub import {
     eval "require $package; 1";
     if ( $@ ) {
       carp "Could not require $package: $@";
-    } 
+    }
   }
 
 }
@@ -108,15 +109,49 @@ sub run {
 
     my $hashref=$do->{$test};
     $self->{tests}->{$test}=$testmodule->run( %$hashref );
+
+    #append time of run
+    $self->{tests}->{$test}->{time}=slurm_time();
   }
 
   my $ret=0;
   foreach my $test (keys $self->{tests}){
+    #"total" return is 1 (fail) if any of the tests fails
     $ret+=$self->{tests}->{$test}->{result};
+
+    #log according to verbosity
+    if($self->{logging}->{verbosity}=~/debug/){
+      $self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) SlurmHC::$test took "
+			.$self->{tests}->{$test}->{elapsed}." seconds."
+		       );
+    }
+
+    #log info
+    if($self->{logging}->{verbosity}=~/info|debug|all/){
+      foreach (@{$self->{tests}->{$test}->{info}}){
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) ".$_);
+      }
+    }
+    #log warnings
+    if($self->{logging}->{verbosity}=~/info|warn|debug|all/){
+      foreach (@{$self->{tests}->{$test}->{warning}}){
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (W) ".$_);
+      }
+    }
+    #log errors
+    if($self->{logging}->{verbosity}=~/info|warn|err|debug|all/){
+      foreach (@{$self->{tests}->{$test}->{error}}){
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (E) ".$_);
+      }
+    }
   }
+
   #stop timing and add elapsed time
   my $end_time = [gettimeofday];
   $self->{time_running} += tv_interval $start_time, $end_time;
+
+  $self->{log}->log("[".slurm_time()."] (I) SlurmHC: test took $self->{time_running} seconds.") 
+    if $self->{logging}->{verbosity}=~/info|all|debug/;
 
   return ($ret>0) ? 1 : 0;
 }
@@ -132,7 +167,7 @@ sub Status {
 }
 
 sub slurm_time {
-  my $str=strftime "[%FT%H:%M:%S]", localtime;
+  my $str=strftime "%FT%H:%M:%S", localtime;
   return $str;
 }
 

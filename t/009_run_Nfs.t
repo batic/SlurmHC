@@ -4,6 +4,11 @@
 
 use Test::Most 'no_plan';
 
+sub check_timing{
+    my $time=shift;
+    return ($time>0) ? 1 : 0;
+}
+
 #try to: use SlurmHC
 use_ok( 'SlurmHC::Nfs' );
 
@@ -12,25 +17,19 @@ my $a=SlurmHC::Nfs::run();
 is $a->{result}, 0, "Nfs result is ok.";
 like $a->{info}[0], qr/ok, mounted on/, "Nfs info is ok.";
 
-TODO:{
-    local $TODO = 'This test might not work on any other machine.';
+#slightly wrong way to test, but right now it works
+my $res={
+    info      => [],
+    warning   => [],
+    error     => [],
+    result    => 0,
+    elapsed   => code(\&check_timing)
+};
 
-    #slightly wrong way to test, but right now it works
-    my $res={
-	info      => [],
-	warning   => [],
-	error     => [],
-	result    => 0
-    };
-    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/pikolit/d0/nfs.";
-    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /net/pikolit/d0/nfs.";
-    push $res->{info}, "SlurmHC::Nfs::run: pikolit:/d0/nfs ok, mounted on /var/lib/schroot/mount/sl5.x86_64-run/net/pikolit/d0/nfs.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d01.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d01 ok, mounted on /net/f9sn005/d01.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn005/d02.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn006:/d01 ok, mounted on /var/lib/schroot/mount/slc5.x86_64-run/net/f9sn006/d01.";
-    push $res->{info}, "SlurmHC::Nfs::run: f9sn005:/d02 ok, mounted on /net/f9sn005/d02.";
-
-
-    cmp_deeply $a, $res, "All ok with results.";
-}	   
+my @list=`df -t nfs | grep -v Available`;
+use Data::Dumper;
+foreach(@list){
+    my @t=split(/\s+/,$_);
+    push $res->{info}, "SlurmHC::Nfs::run: $t[0] ok, mounted on $t[5].";
+}
+cmp_deeply $a, $res, "All ok with results.";

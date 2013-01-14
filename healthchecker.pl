@@ -1,21 +1,17 @@
 #!/usr/bin/perl
 #
 
-use SlurmHC qw( Load Disk );
+use SlurmHC;# qw( Load Disk );
 
-my $t=SlurmHC->new();
-
-# $t->run
-# ( 
-#   SlurmHC::Load => { load_max_5min=>0.002 },
-#   Load => { load_max_1min=>0.002 }
-# );
-# $t->run( Load => {} );
-# $t->run( Load => { load_max_5min=>2, load_max_15min=>1.5 } );
+my $t=SlurmHC->new( 
+    file      => "logger.log", 
+    verbosity => "debug" 
+    );
 
 $t->run( 
     Load => {},
-    Disk => { mount_point=>"/Volumes/gajba", warning_limit=>"240G", error_limit=>"20G" } 
+    Disk => { mount_point=>"/data0", warning_limit=>"40G", error_limit=>"20G" },
+    Nfs  => {}
   );
 $t->Print();
 

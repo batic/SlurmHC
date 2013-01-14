@@ -2,9 +2,14 @@ package SlurmHC::Nfs;
 
 use strict;
 use parent 'SlurmHC';
+
+use Time::HiRes qw(gettimeofday tv_interval);
 use vars qw($VERSION);
 
 sub run{
+  #start timing
+  my $start_time=[gettimeofday]; #start timing
+
   my $self;
   if ($_[0] || ref $_[0]) {
     $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Nfs');
@@ -16,7 +21,8 @@ sub run{
 	       info      => [],
 	       warning   => [],
 	       error     => [],
-	       result    => 0
+	       result    => 0,
+	       elapsed   => 0
 	      };
 
   #list all mounted nfs points
@@ -41,6 +47,10 @@ sub run{
 	(caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
     }
   }
+
+  #stop timing and add elapsed time
+  my $end_time = [gettimeofday];
+  $results->{elapsed} = tv_interval $start_time, $end_time;
 
   return $results;
 }
