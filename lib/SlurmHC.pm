@@ -96,31 +96,41 @@ sub run {
   my $start_time=[gettimeofday]; #this will be needed for total run time
 
   my $do = { @_ };
+  #this will flatten the scheduled tests!!!!
+  #be careful that they are not the same!!!!
+  #look into git history and unearth shift/shift
+  #then construct hashref from that, but use $testname (look below)
+  #for $self->{tests}->{$testname}
+  #this way, even
+  # run->( Disk => {}, Disk => { mount_point="/data1" } );
+  #should work
 
   foreach my $test (keys $do){
+    my $testname=$test.".".int(rand(10000));
     my $testmodule='SlurmHC::'.$test;
-    $self->{tests}->{$test}={
-			     info      => [],
-			     warning   => [],
-			     error     => [],
-			     result    => -1,
-			     elapsed   => 0,
-			    };
+    $self->{tests}->{$testname}={
+				 info      => [],
+				 warning   => [],
+				 error     => [],
+				 result    => -1,
+				 elapsed   => 0,
+				};
 
     my $hashref=$do->{$test};
-    $self->{tests}->{$test}=$testmodule->run( %$hashref );
+    $self->{tests}->{$testname}=$testmodule->run( %$hashref );
 
     #append time of run
-    $self->{tests}->{$test}->{time}=slurm_time();
+    $self->{tests}->{$testname}->{time}=slurm_time();
   }
 
   my $ret=0;
-  foreach my $test (keys $self->{tests}){
+  foreach my $test (keys $do){
     #"total" return is 1 (fail) if any of the tests fails
     $ret+=$self->{tests}->{$test}->{result};
 
     #log according to verbosity
     if($self->{logging}->{verbosity}=~/debug/){
+      my $testname=$test=~s/\.\d[4]$//g;
       $self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) SlurmHC::$test took "
 			.$self->{tests}->{$test}->{elapsed}." seconds."
 		       );
@@ -205,10 +215,11 @@ sub Print {
   my $self=shift;
 
   foreach my $test (keys $self->{tests}){
+    print "test name = $test\n";
     if($self->{tests}->{$test}->{info}){
       print "SlurmHC - info #######################################\n";
-      print Dumper($self->{tests}->{$test});
-      #print join("\n",$self->{tests}->{$test}->{info})."\n"
+      #print Dumper($self->{tests}->{$test});
+      print join("\n",@{$self->{tests}->{$test}->{info}})."\n"
     }
   }
 #   print "SlurmHC - warnings ###################################\n" if @warnings;
