@@ -168,12 +168,15 @@ sub run {
 
 sub Status {
   my $self=shift;
-  my $test=shift;
+  my $status_of=shift;
 
   #return test result if the test is defined:
   # -1 means the test is scheduled, but has not been run yet
   # -2 means the test has not been defined/scheduled
-  return (defined $self->{tests}->{$test}) ? $self->{tests}->{$test}->{result} : -2;
+  foreach my $test (keys $self->{tests}){
+    return $self->{tests}->{$test}->{result} if $test=~/$status_of/;
+  }
+  return -2;
 }
 
 sub slurm_time {
