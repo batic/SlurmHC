@@ -9,9 +9,12 @@ use warnings;
 use Carp qw(carp);
 use File::Spec::Functions qw(catdir catfile splitdir);
 use File::Basename 'fileparse';
+use File::Find;
+
 use POSIX qw(strftime);
 use Time::HiRes qw(gettimeofday tv_interval);
 use Data::Dumper;
+
 
 use SlurmHC::Log;
 
@@ -40,9 +43,6 @@ sub new {
 
   $self->{time_running}=0;
 
-  use Data::Dumper;
-  print Dumper($self);
-
   #start log
   $self->{log}=SlurmHC::Log->new( %$arg );
 
@@ -57,13 +57,21 @@ sub list_testmodules {
   for my $directory (@INC) {
     next unless -d (my $path = catdir $directory, split(/::|'/, $namespace));
 
-    # List "*.pm" files in directory
-    opendir(my $dir, $path);
-    for my $file (grep /\.pm$/, readdir $dir) {
+    # List "*.pm" files from this directory (do not follow symbolic links)
+    my @list;
+    find({ wanted => sub { push @list, $File::Find::name if $File::Find::name=~ /^.*pm/ },
+	   follow => 0
+	 },
+	 $path );
+
+    for my $file (@list) {
       next if -d catfile splitdir($path), $file;
 
-      # Module found, Log is not test!
-      my $class = "${namespace}::" . fileparse $file, qr/\.pm/;
+      my ($t, $class)=split(/$directory\//,$file);
+      $class=~s/\//::/g;
+      $class=~s/\.pm//g;
+
+      # Module found, Log is not a test!
       push @modules, $class unless $found{$class}++ or $class=~/Log/;
     }
   }
@@ -105,9 +113,12 @@ sub run {
   # run->( Disk => {}, Disk => { mount_point="/data1" } );
   #should work
 
+  my @tests_of_this_run;
+
   foreach my $test (keys $do){
     my $testname=$test.".".int(rand(10000));
     my $testmodule='SlurmHC::'.$test;
+    push @tests_of_this_run, $testname;
     $self->{tests}->{$testname}={
 				 info      => [],
 				 warning   => [],
@@ -124,7 +135,7 @@ sub run {
   }
 
   my $ret=0;
-  foreach my $test (keys $do){
+  foreach my $test (@tests_of_this_run){
     #"total" return is 1 (fail) if any of the tests fails
     $ret+=$self->{tests}->{$test}->{result};
 

@@ -17,4 +17,7 @@ my $message="should be able to write this to /tmp/SlurmHC.test.log";
 is $object->log($message), 0, "Checking logging to /tmp/.";
 
 #try writing to non writtable file
-dies_ok { $object=SlurmHC::Log->new( file=>"/SlurmHC.test.log", verbosity=>"all" ) } "Should not be able to write to /, so should die.";
+SKIP: {
+    skip "I am root and can write anywhere.", 1, if (getpwuid( $< ))=~/^root$/;
+    dies_ok { $object=SlurmHC::Log->new( file=>"/SlurmHC.test.log", verbosity=>"all" ) } "Should not be able to write to /, so should die.";
+};
