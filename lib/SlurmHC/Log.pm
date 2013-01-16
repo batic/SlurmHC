@@ -6,7 +6,6 @@ use FileHandle;
 
 use parent 'SlurmHC';
 
-
 sub run{
     return 0;
 }

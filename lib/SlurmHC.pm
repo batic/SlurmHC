@@ -127,11 +127,23 @@ sub run {
 				 elapsed   => 0,
 				};
 
-    my $hashref=$do->{$test};
-    $self->{tests}->{$testname}=$testmodule->run( %$hashref );
+    #check requirements
+    my $ok_to_run=1;
+    foreach($testmodule->required()){
+      if($self->Status($_)!=0){
+	$ok_to_run=0;
+	$self->{log}->log("[".slurm_time()."] ".
+			  "(E) Could not run $testmodule since it requires $_"
+		       );
+      }
+    }
+    if($ok_to_run==1){
+      my $hashref=$do->{$test};
+      $self->{tests}->{$testname}=$testmodule->run( %$hashref );
 
-    #append time of run
-    $self->{tests}->{$testname}->{time}=slurm_time();
+      #append time of run
+      $self->{tests}->{$testname}->{time}=slurm_time();
+    }
   }
 
   my $ret=0;
@@ -180,12 +192,14 @@ sub run {
 sub Status {
   my $self=shift;
   my $status_of=shift;
+  $status_of=~s/SlurmHC:://g;
 
   #return test result if the test is defined:
   # -1 means the test is scheduled, but has not been run yet
   # -2 means the test has not been defined/scheduled
+
   foreach my $test (keys $self->{tests}){
-    return $self->{tests}->{$test}->{result} if $test=~/$status_of/;
+    return $self->{tests}->{$test}->{result} if $test=~/^$status_of/;
   }
   return -2;
 }
@@ -195,51 +209,36 @@ sub slurm_time {
   return $str;
 }
 
-# sub Info {
-#   my ($self, $caller, $message) = @_;
-#   my $inf=slurm_time." (I) $caller: $message";
-#   push @info, $inf;
-
-#   $log->log($inf) if $options{verbosity} =~ /all|info|debug/;
-
-#   #replace info about running time 
-#   if (defined $self{time_running}) {
-#     @info = grep { $_ !~ qr/time elapsed testing/ } @info;
-#     push @info, slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.";
-#     $log->log(slurm_time." (I) SlurmHC: time elapsed testing: ".$self{time_running}." seconds.") if $options{verbosity} =~ /debug/;
-#   }
-# }
-
-# sub Warning {
-#   my ($self, $caller, $message) = @_;
-#   my $warn=slurm_time." (I) $caller: $message";
-#   push @warnings, $warn;
-#   warn("(W) ".$warn);
-#   $log->log($warn) if $options{verbosity} =~ /all|warn|debug/;
-# }
-
-# sub Error {
-#   my ($self, $caller, $message) = @_;
-#   my $err=slurm_time." (E) $caller: $message";
-#   push @errors, $err;
-#   $log->log($err) if $options{verbosity} =~ /all|err|debug/;
-# }
 
 sub Print {
   my $self=shift;
 
-  foreach my $test (keys $self->{tests}){
-    print "test name = $test\n";
-    if($self->{tests}->{$test}->{info}){
-      print "SlurmHC - info #######################################\n";
-      #print Dumper($self->{tests}->{$test});
-      print join("\n",@{$self->{tests}->{$test}->{info}})."\n"
+  if($self->{logging}->{verbosity}=~/debug/){
+    foreach my $test (keys $self->{tests}){
+      print "dumping $test data:\n";
+      Dumper($self->{tests}->{$test});
     }
   }
-#   print "SlurmHC - warnings ###################################\n" if @warnings;
-#   print join("\n",@warnings)."\n\n" if @warnings;
-#   print "SlurmHC - errors #####################################\n" if @errors;
-#   print join("\n",@errors)."\n\n" if @errors;
+  else{
+    print "SlurmHC - info #######################################\n";
+    foreach my $test (keys $self->{tests}){
+      if(@{$self->{tests}->{$test}->{info}}){
+	print join("\n",@{$self->{tests}->{$test}->{info}})."\n";
+      }
+    }
+    print "SlurmHC - warnings ###################################\n";
+    foreach my $test (keys $self->{tests}){
+      if(@{$self->{tests}->{$test}->{warning}}){
+	print join("\n",@{$self->{tests}->{$test}->{warning}})."\n";
+      }
+    }
+    print "SlurmHC - errors #####################################\n";
+    foreach my $test (keys $self->{tests}){
+      if(@{$self->{tests}->{$test}->{error}}){
+	print join("\n",@{$self->{tests}->{$test}->{error}})."\n";
+      }
+    }
+  }
 }
 
 # sub Mail {

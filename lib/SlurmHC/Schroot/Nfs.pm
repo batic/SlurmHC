@@ -70,7 +70,7 @@ sub run{
       system($syscall);
       if($? != 0){
 	push $results->{error},
-	  (caller(0))[3].": $mountpoint could not be listed on $mountdir in session $syscall; exit value ".sprintf("%d",$?>>8);
+	  (caller(0))[3].": $mountpoint could not be listed on $mountdir in session $session; exit value ".sprintf("%d",$?>>8);
 	$results->{result}=1;
 
 	#stop timing and add elapsed time

@@ -6,6 +6,11 @@ use parent 'SlurmHC';
 use Time::HiRes qw(gettimeofday tv_interval);
 use vars qw($VERSION);
 
+sub required{
+  my @reqs=();
+  return @reqs;
+}
+
 sub run{
   #start timing
   my $start_time=[gettimeofday]; #start timing

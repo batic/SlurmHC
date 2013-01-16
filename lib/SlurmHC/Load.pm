@@ -13,6 +13,10 @@ sub n_cpu {
   return $#ncpu+1;
 }
 
+sub required{
+  my @reqs=();
+  return @reqs;
+}
 
 sub run{
   #start timing
