@@ -15,7 +15,7 @@ sub run{
 
   my $self;
   if ($_[0] || ref $_[0]) {
-    $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Schroot');
+    $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Schroot::Chroot');
   }
 
   my $arg = { run_as    => "prdatl01",
