@@ -30,6 +30,7 @@ sub new {
 		    log          => {},
 		    hostname     => '',
 		    time_running => 0,
+		    test_timeout => 10,
 		   }, ref ($class) || $class;
 
   my $arg = { %{$self->{logging}}, @_ };
@@ -138,11 +139,34 @@ sub run {
       }
     }
     if($ok_to_run==1){
-      my $hashref=$do->{$test};
-      $self->{tests}->{$testname}=$testmodule->run( %$hashref );
 
-      #append time of run
-      $self->{tests}->{$testname}->{time}=slurm_time();
+      #wrap call to run the test into timeout,
+      #so that the test does not hang indefinitely
+
+      eval {
+	local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
+	alarm $self->{test_timeout};
+
+	#run test
+	my $hashref=$do->{$test};
+	$self->{tests}->{$testname}=$testmodule->run( %$hashref );
+
+	#append time of run
+	$self->{tests}->{$testname}->{time}=slurm_time();
+
+	alarm 0;
+      };
+      if ($@) {
+	die "Something strange happened: $@\n" unless $@ eq "alarm\n";
+
+	#log "timeout"
+	$self->{tests}->{$testname}->{result}=-3;
+	$self->{tests}->{$testname}->{elapsed}=$self->{test_timeout};
+	push @{$self->{tests}->{$testname}->{error}},
+	  "Test $test timeouted after $self->{test_timeout} seconds.";
+	$self->{log}->log("[".slurm_time()."] (E) ".
+			  "$testname timeouted after $self->{test_timeout} seconds.");
+      }
     }
   }
 
@@ -156,25 +180,28 @@ sub run {
       my $testname=$test=~s/\.\d[4]$//g;
       $self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) SlurmHC::$test took "
 			.$self->{tests}->{$test}->{elapsed}." seconds."
-		       );
+		       ) if $self->{tests}->{$test}->{result}>=0;
     }
 
     #log info
     if($self->{logging}->{verbosity}=~/info|debug|all/){
       foreach (@{$self->{tests}->{$test}->{info}}){
-	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) ".$_);
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (I) ".$_)
+	  if $self->{tests}->{$test}->{result}>=0;
       }
     }
     #log warnings
     if($self->{logging}->{verbosity}=~/info|warn|debug|all/){
       foreach (@{$self->{tests}->{$test}->{warning}}){
-	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (W) ".$_);
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (W) ".$_)
+	  if $self->{tests}->{$test}->{result}>=0;
       }
     }
     #log errors
     if($self->{logging}->{verbosity}=~/info|warn|err|debug|all/){
       foreach (@{$self->{tests}->{$test}->{error}}){
-	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (E) ".$_);
+	$self->{log}->log("[".$self->{tests}->{$test}->{time}."] (E) ".$_)
+	  if $self->{tests}->{$test}->{result}>=0;
       }
     }
   }
@@ -216,7 +243,7 @@ sub Print {
   if($self->{logging}->{verbosity}=~/debug/){
     foreach my $test (keys $self->{tests}){
       print "dumping $test data:\n";
-      Dumper($self->{tests}->{$test});
+      print Dumper($self->{tests}->{$test});
     }
   }
   else{
