@@ -30,6 +30,9 @@ sub run{
 	       elapsed   => 0
 	      };
 
+  #make this test accept mount points to test,
+  #if no mount point is defined, get list of all nfs mount points via df or proc/mounts
+
   #list all mounted nfs points
   my @mounts = split /\n+/, `df -t nfs | grep -v Available`;
   if (!@mounts) {
