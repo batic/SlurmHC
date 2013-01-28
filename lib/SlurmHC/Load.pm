@@ -38,7 +38,7 @@ sub run{
 	       elapsed   => 0,
 	      };
 
-  my $available_limits= { load_warn_1min=>'', load_warn_5min=>'', load_warn_15min=>'' }; 
+  my $available_limits= { load_warn_1min=>'', load_warn_5min=>'', load_warn_15min=>'',
 			  load_max_1min=>'', load_max_5min=>'', load_max_15min=>'' };
 
   if (keys $arg) {
