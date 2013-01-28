@@ -20,7 +20,11 @@ sub run{
     $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Nfs');
   }
 
-  my $arg = { @_ };
+  my $arg = {
+	     exports      => '',
+	     mount_points => '',
+	     @_
+	    };
 
   my $results={
 	       info      => [],
@@ -33,26 +37,58 @@ sub run{
   #make this test accept mount points to test,
   #if no mount point is defined, get list of all nfs mount points via df or proc/mounts
 
-  #list all mounted nfs points
-  my @mounts = split /\n+/, `df -t nfs | grep -v Available`;
+  my $available_opts= { exports=>'', mount_points=>'' };
+
+  if(keys $arg){
+    foreach(keys $arg){
+      if(not defined $available_opts->{$_}){
+	push $results->{warning}, (caller(0))[3]." Unavailable option \"$_\"!";
+      }
+    }
+  }
+
+  my @mounts;
+
+  if($arg->{mount_points}!~/^\s*$/){
+    @mounts = (@mounts, split /,\s*/, $arg->{mount_points});
+  }
+  if($arg->{exports}!~/^\s*$/){
+    my @tmpmounts = split /,\s*/, $arg->{exports};
+    foreach (@tmpmounts) {
+      my ($host,$mountdir) = ($_ =~/(.*):(.*)/);
+      $mountdir="/net/".$host."/".$mountdir;
+      $mountdir=~s/\/\//\//g;
+      push @mounts, $mountdir;
+    }
+  }
+  if(!@mounts){
+    #no mount points to check are given;
+    #list all mounted nfs points
+    my @tmpmounts = split /\n+/, `df -t nfs | grep -v Available`;
+    foreach (@tmpmounts) {
+      my @data = split /\s+/, $_;
+      push @mounts, $data[5];
+    }
+  }
+
+
   if (!@mounts) {
     #since we expect at least "some" nfs mounts
-    push $results->{error}, (caller(0))[3].": No nfs drives mounted.";
+    push $results->{error}, (caller(0))[3].": No nfs drives defined/available.";
     $results->{result}=1;
   }
-  foreach (@mounts) {
-    my @data = split /\s+/, $_;
-    my $mountdir = $data[5];
-    my $mountpoint = $data[0];
+
+  foreach my $mountdir (@mounts) {
+    next unless $mountdir;
     my $syscall="ls -l $mountdir/ &>/dev/null || exit 1";
     system($syscall);
     if ($? != 0) {
       push $results->{error},
-	(caller(0))[3].": $mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8);
+	(caller(0))[3].": listing $mountdir failed with error: ".sprintf("%d",$?>>8);
       $results->{result}=1;
     } else {
       push $results->{info},
-	(caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
+	(caller(0))[3].": listing $mountdir ok";
     }
   }
 
