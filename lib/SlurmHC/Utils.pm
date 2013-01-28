@@ -22,6 +22,7 @@ sub valid_user {
   }
   return 0;
 }
+
 sub user_id {
   my $user = shift;
   my $uid = getpwnam($user);
@@ -121,6 +122,13 @@ sub dir_perm{
     #is /t/m/p/ directory readable && writtable by othello
     my $dir_permission_ok=SlurmHC::Utils::dir_perm("/t/m/p","othello","rw");
 
+    #is hamlet even a valid user?
+    my $hamlet_ok=SlurmHC::Utils::valid_user("hamlet");
+
+    #if he is, get his uid
+    if($hamlet_ok){
+       my $hamlet_uid=SlurmHC::Utils::user_id("hamlet");
+    }
 
 =head1 AUTHOR
 
