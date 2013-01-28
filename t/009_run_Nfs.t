@@ -59,8 +59,3 @@ is $a->{result}, 0, "Nfs result from both exports and mount_points is ok.";
 like $a->{info}[0], qr/ok/, "Nfs info from both exports and mount_points is ok.";
 like $a->{info}[1], qr/ok/, "Nfs info from both exports and mount_points is ok.";
 like $a->{info}[2], qr/ok/, "Nfs info from both exports and mount_points is ok.";
-
-$a=SlurmHC::Nfs::run( 
-    exports => "cedric:/stuff/media/series"
-    );#print Dumper($a);
-is $a->{result}, 0, "Nfs result from cedric is ok.";
