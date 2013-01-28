@@ -4,14 +4,10 @@ use strict;
 use warnings;
 
 use parent 'SlurmHC';
+use SlurmHC::Utils;
 
 use Time::HiRes qw(gettimeofday tv_interval);
 use vars qw($VERSION);
-
-sub n_cpu {
-  my @ncpu = grep(/^processor/,`cat /proc/cpuinfo`);
-  return $#ncpu+1;
-}
 
 sub required{
   my @reqs=();
@@ -72,7 +68,7 @@ sub run{
   }
 
 
-  my $ncpu=n_cpu();
+  my $ncpu=SlurmHC::Utils::n_cpu();
 
   open(LOAD, "/proc/loadavg") or do {
     push $results->{error}, (caller(0))[3]."Unable to get server load: $!";

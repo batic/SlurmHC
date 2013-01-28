@@ -15,8 +15,8 @@ use POSIX qw(strftime);
 use Time::HiRes qw(gettimeofday tv_interval);
 use Data::Dumper;
 
-
 use SlurmHC::Log;
+use SlurmHC::Utils;
 
 sub new {
   my $class=shift;
