@@ -16,5 +16,6 @@ find( sub { /\.t\z/ and push @tests, $File::Find::name }, @tdirs );
 warn "$0: Found " . scalar(@tests) . " .t files for test harness.\n";
 
 unshift @INC, qw( blib/arch blib/lib );
+local $ENV{HARNESS_OPTIONS} = 'c';
 $Test::Harness::verbose = $ENV{TEST_VERBOSE} || 0;
 Test::Harness::runtests( @tests );

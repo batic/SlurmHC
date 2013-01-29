@@ -16,11 +16,10 @@ sub n_cpu {
 
 sub valid_user {
   my $user=shift;
-
-  if( not defined getpwnam($user)){
-    return 1;
+  if(defined getpwnam($user)){
+    return 0;
   }
-  return 0;
+  return 1;
 }
 
 sub user_id {

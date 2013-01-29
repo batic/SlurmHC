@@ -47,6 +47,18 @@ sub run{
 
   #check if arguments are positive
   #undefine if not, keep only 15min average, defaulting it to 1.5
+  if (defined $arg->{load_warn_1min} and $arg->{load_warn_1min}<0.) {
+    $arg->{load_warn_1min}=undef;
+    push $results->{warning}, (caller(0))[3]." Negative limit for warning 1min average.";
+  }
+  if (defined $arg->{load_warn_5min} and $arg->{load_warn_5min}<0.) {
+    $arg->{load_warn_5min}=undef;
+    push $results->{warning}, (caller(0))[3]." Negative limit for warning 5min average.";
+  }
+  if (defined $arg->{load_warn_15min} and $arg->{load_warn_15min}<0.0) {
+    $arg->{load_warn_15min}=undef;
+    push $results->{warning}, (caller(0))[3]." Negative limit for warning 15min average.";
+  }
   if (defined $arg->{load_max_1min} and $arg->{load_max_1min}<0.) {
     $arg->{load_max_1min}=undef;
     push $results->{warning}, (caller(0))[3]." Negative limit for 1min average.";
@@ -85,40 +97,68 @@ sub run{
   close LOAD;
   chop $load_avg;
   my ( $load_1, $load_5, $load_15 ) = split /\s/, $load_avg;
+  my $loads={ load_1min=>$load_1, load_5min=>$load_5, load_15min=>$load_15 };
 
-  if (defined $arg->{load_max_1min}) {
-    if ( $load_1 > $arg->{load_max_1min}*$ncpu ) {
-      # load is above set limit
-      push $results->{warning},
-	(caller(0))[3]." 1min load average above limit: $load_1 > "
-	  .($arg->{load_max_1min}*$ncpu);
-      $results->{result}+=1;
+  foreach my $load (qw/1min 5min 15min/){
+    my $load_warning="load_warn_".$load;
+    my $load_limit="load_max_".$load;
+    my $load_value=$loads->{"load_".$load};
+
+    if(defined $arg->{$load_warning})
+    {
+      if(defined $arg->{$load_limit})
+	{
+	  #both warn and max are defined:
+	  if ( $load_value > $arg->{$load_warning}*$ncpu ){
+	    if ( $load_value < $arg->{$load_limit}*$ncpu ){
+	      # load is above warning limit, but below error limit
+	      push $results->{warning},
+		(caller(0))[3]." $load load average above warning limit: $load_value > "
+		  .($arg->{$load_warning}*$ncpu);
+	    }
+	    else
+	      {
+		# load is above max limit
+		push $results->{warning},
+		  (caller(0))[3]." $load load average above limit: $load_value > "
+		    .($arg->{$load_limit}*$ncpu);
+		$results->{result}+=1;
+	      }
+	  }
+	}
+      else
+	{
+	  #only warn is defined
+	  if ( $load_value > $arg->{$load_warning}*$ncpu )
+	    {
+	      push $results->{warning},
+		(caller(0))[3]." $load load average above warning limit: $load_value > "
+		  .($arg->{$load_warning}*$ncpu);
+	    }
+	}
+    }
+  else
+    {
+      if(defined $arg->{$load_limit})
+	{
+	  #only max is defined
+	  if ( $load_value > $arg->{$load_limit}*$ncpu )
+	    {
+	      push $results->{warning},
+		(caller(0))[3]." $load load average above limit: $load_value > "
+		  .($arg->{$load_limit}*$ncpu);
+		$results->{result}+=1;
+	    }
+	}
     }
   }
-  if (defined $arg->{load_max_5min}) {
-    if ( $load_5 > $arg->{load_max_5min}*$ncpu ) {
-      # load is above set limit
-      push $results->{warning},
-	(caller(0))[3]." 5min load average above limit: $load_5 > "
-	  .($arg->{load_max_5min}*$ncpu);
-      $results->{result}+=2;
-    }
-  }
-  if (defined $arg->{load_max_15min}) {
-    if ( $load_15 > $arg->{load_max_15min}*$ncpu ) {
-      # load is above set limit
-      push $results->{warning},
-	(caller(0))[3]." 15min load average above limit: $load_15 > "
-	  .($arg->{load_max_15min}*$ncpu);
-      $results->{result}+=3;
-    }
-  }
+
   my $error=$results->{result};
 
   my $total_error_check=0;
-  $total_error_check+=1 if defined $arg->{load_max_1min};
-  $total_error_check+=2 if defined $arg->{load_max_5min};
-  $total_error_check+=3 if defined $arg->{load_max_15min};
+  $total_error_check++ if defined $arg->{load_max_1min};
+  $total_error_check++ if defined $arg->{load_max_5min};
+  $total_error_check++ if defined $arg->{load_max_15min};
 
   if ($error>0) {
     if ($error==$total_error_check) {
