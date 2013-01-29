@@ -80,6 +80,7 @@ sub run{
 
   foreach my $mountdir (@mounts) {
     next unless $mountdir;
+    $mountdir=~s/\s+//g; #will not work for directories with spaces in the name!!
     my $syscall="ls -l $mountdir/ &>/dev/null || exit 1";
     system($syscall);
     if ($? != 0) {

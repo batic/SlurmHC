@@ -20,7 +20,10 @@ sub run{
     $self = shift if $_[0]->can('isa') and  $_[0]->isa('SlurmHC::Cvmfs');
   }
 
-  my $arg = { @_ };
+  my $arg = {
+	     mount_points => '',
+	     @_
+	    };
 
   my $results={
 	       info      => [],
@@ -30,27 +33,51 @@ sub run{
 	       elapsed   => 0
 	      };
 
-  #check cvmfs mount points (not! inside schroot)
-  my @mounts = split /\n+/, `df | grep cvmfs`;
+  #make this test accept mount points to test,
+  #if no mount point is defined, get list of all cvmfs mount points via df
+
+  my $available_opts= { mount_points=>'' };
+
+  if(keys $arg){
+    foreach(keys $arg){
+      if(not defined $available_opts->{$_}){
+	push $results->{warning}, (caller(0))[3]." Unavailable option \"$_\"!";
+      }
+    }
+  }
+
+  my @mounts;
+
+  #parse list of defined mount points, if any
+  if($arg->{mount_points}!~/^\s*$/){
+    @mounts = split /,\s*/, $arg->{mount_points};
+  }
+  else{
+    my @tmpmounts = split /\n+/, `df | grep cvmfs`;
+    foreach(@tmpmounts){
+      my @data = split /\s+/, $_;
+      push @mounts, $data[5];
+    }
+  }
   if (!@mounts) {
     #since we expect cvmfs mounts!
     push $results->{error}, (caller(0))[3].": No cvmfs drives mounted.";
     $results->{result}=1;
   }
-  foreach (@mounts){
-    my @data = split /\s+/, $_;
-    my $mountdir = $data[5];
-    my $mountpoint = $data[0];
+
+  foreach my $mountdir (@mounts){
+    next unless $mountdir;
+    $mountdir=~s/\s+//g; #will not work for directories with spaces in the name!!
     my $syscall="find $mountdir -maxdepth 3 &> /dev/null || exit 1";
     system($syscall);
     if($? != 0){
       push $results->{error},
-	(caller(0))[3].": $mountpoint could not be listed on $mountdir; error ".sprintf("%d",$?>>8);
+	(caller(0))[3].": $mountdir could not be listed; error ".sprintf("%d",$?>>8);
       $results->{result}=1;
     }
     else{
       push $results->{info},
-	(caller(0))[3].": $mountpoint ok, mounted on $mountdir.";
+	(caller(0))[3].": $mountdir ok";
     }
   }
 
