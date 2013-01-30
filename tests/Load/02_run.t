@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/003_run_Load.t - check running SlurmHC::Load
+# check running SlurmHC::Load
 
 use Test::Most 'no_plan';
 use Data::Dumper;

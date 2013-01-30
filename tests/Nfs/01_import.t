@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/004_import_Nfs.t - check module import sub for Nfs test package
+# check module import sub for Nfs test package
 
 use Test::More 'no_plan';
 

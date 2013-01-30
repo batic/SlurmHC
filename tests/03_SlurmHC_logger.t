@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/007_logger.t - check logging with SlurmHC::Log
+# check logging with SlurmHC::Log
 
 use Test::More 'no_plan';
 use Test::Warn;

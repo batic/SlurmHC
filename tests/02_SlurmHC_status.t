@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/006_status.t - check SlurmHC module for status of (given) test
+# check SlurmHC module for status of (given) test
 
 use Test::More 'no_plan';
 

@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/011_run_Cvmfs.t - check cvmfs
+# check cvmfs
 
 use Test::Most 'no_plan';
 

@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/014_import_Schroot-Session.t - check module import sub for Schroot::Session test
+# check module import sub for Schroot::Session test
 
 use Test::More 'no_plan';
 

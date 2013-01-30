@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/002_import_Load.t - check module import sub
+# check module import sub
 
 use Test::More 'no_plan';
 

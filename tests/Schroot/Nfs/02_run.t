@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/017_run_Schroot-Nfs.t - try connecting to running sessions and check NFS within them
+# try connecting to running sessions and check NFS within them
 
 use Test::Most 'no_plan';
 

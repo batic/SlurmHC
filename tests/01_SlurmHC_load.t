@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/001_load.t - check SlurmHC module loading 
+# check SlurmHC module loading 
 
 use Test::More 'no_plan';
 

@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/019_run_Schroot-Cvmfs.t - try connecting to running sessions and check cvmfs within them
+# try connecting to running sessions and check cvmfs within them
 
 use Test::Most 'no_plan';
 

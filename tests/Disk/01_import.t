@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/004_import_Disk.t - check module import sub for Disk test package
+# check module import sub for Disk test package
 
 use Test::Most 'no_plan';
 

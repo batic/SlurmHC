@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/005_run_Nfs.t - check nfs mountpoints
+# check nfs mountpoints
 
 use Test::Most 'no_plan';
 

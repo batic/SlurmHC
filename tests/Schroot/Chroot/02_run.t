@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/013_run_Schroot-Chroot.t - try creating available (s)chroots
+# try creating available (s)chroots
 
 use Test::Most 'no_plan';
 

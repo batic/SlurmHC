@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/005_run_Disk.t - check scratch disk space availability
+# check scratch disk space availability
 
 use Test::Most 'no_plan';
 use Data::Dumper;

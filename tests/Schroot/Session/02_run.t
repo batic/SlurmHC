@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-# t/015_run_Schroot-Session.t - try connecting to running sessions
+# try connecting to running sessions
 
 use Test::Most 'no_plan';
 
