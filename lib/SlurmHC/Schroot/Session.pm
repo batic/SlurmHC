@@ -24,6 +24,7 @@ sub run{
 
   my $arg = { run_as    => "prdatl01",
 	      run_dir   => "./",
+	      sessions  => "",
 	      @_ };
 
   #results hashref
@@ -37,7 +38,7 @@ sub run{
 
 
   #check for unavailable/unparsable options
-  my $available_opts= { run_as=>'', run_dir=>'' };
+  my $available_opts= { run_as=>'', run_dir=>'' , sessions=>'' };
 
   if(keys $arg){
     foreach(keys $arg){
@@ -47,7 +48,7 @@ sub run{
     }
   }
 
-  if( not defined getpwnam($arg->{run_as})){
+  if( not SlurmHC::Utils::valid_user($arg->{run_as} ) ){
     push $results->{error}, (caller(0))[3]." User $arg->{run_as} does not exist!";
     $results->{result}=1;
 
@@ -58,25 +59,52 @@ sub run{
     return $results;
   }
 
-  #list all available sessions and try connecting to them
-  my @sessions = split /\n+/, `schroot --list --all-session`;
+  my @sessions;
 
-  foreach (@sessions) {
-    my ($t, $session) = split ":", $_;
+  #first check if there is a list of sessions to check:
+  if($arg->{sessions}!~/^\s*$/){
+    @sessions = split /,\s*/, $arg->{sessions};
+  }
+  else{
+    #list all available sessions
+    my @tmp_sessions=split /\n+/, `schroot --list --all-session`;
+    foreach (@tmp_sessions){
+      my ($t, $session) = split ":", $_;
+      push @sessions, $session;
+    }
+  }
 
-    #try running something in the session
-    #this will exit with 1 if schroot fails
-    my $syscall="su $arg->{run_as} -c 'schroot -d $arg->{run_dir} -r -p -c ".$session." -- true &>/dev/null || exit 1'";
-    system($syscall);
-    if ($? != 0) {
-      push $results->{error},
-	(caller(0))[3].": testing session $syscall exited with value ".sprintf("%d",$?>>8);
-      $results->{result}=1;
+  #list all available sessions
+  my $available_sessions = join(",", split(/\n+/, `schroot --list --all-session`));
+
+  my $number_of_tested_sessions=0;
+  foreach my $session (@sessions) {
+    if($available_sessions!~/$session/){
+      push $results->{warning},
+	(caller(0))[3].": session $session is not available!";
     }
-    else {
-      push $results->{info},
-	(caller(0))[3].": testing session $session exited ok.";
+    else{
+      #try running something in the session
+      #this will exit with 1 if schroot fails
+      my $syscall="su $arg->{run_as} -c 'schroot -d $arg->{run_dir} -r -p -c ".$session." -- true &>/dev/null || exit 1'";
+      system($syscall);
+      if ($? != 0) {
+	push $results->{error},
+	  (caller(0))[3].": testing session $syscall exited with value ".sprintf("%d",$?>>8);
+	$results->{result}=1;
+      }
+      else {
+	push $results->{info},
+	  (caller(0))[3].": testing session $session exited ok.";
+      }
+      $number_of_tested_sessions++;
     }
+  }
+
+  if(!$number_of_tested_sessions && $available_sessions!~/^\s*$/){
+    push $results->{error},
+      (caller(0))[3].": Defined sessions are unavailable and were not tested.";
+    $results->{result}=1;
   }
 
   #stop timing and add elapsed time

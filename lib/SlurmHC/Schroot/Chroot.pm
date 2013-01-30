@@ -25,6 +25,7 @@ sub run{
 
   my $arg = { run_as    => "prdatl01",
 	      run_dir   => "./",
+	      chroots   => "",
 	      @_ };
 
   #results hashref

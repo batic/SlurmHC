@@ -22,9 +22,25 @@ SKIP: {
     
     skip "Testing chroots requires user to be in wheel, as will try su.", $#sessions+2, unless $members=~/$username/;
     
+    #default test of all sessions
     my $a=SlurmHC::Schroot::Session::run( run_dir => "/" );
     is $a->{result}, 0, "Schroot::Session results ok.";
     for(my $i=0;$i<=$#sessions;$i++){
 	like $a->{info}[$i], qr/testing session.*ok/, "Testing ok.";
     }
+
+    #test just one session (that is currently running)
+    my ($t,$test_session)=split(/:/, $sessions[0]);
+    $a=SlurmHC::Schroot::Session::run( run_dir => "/" , sessions=> $test_session );
+    is $a->{result}, 0, "Schroot::Session testing currently running session.";
+    like $a->{info}[0], qr/testing session.*ok/, "Testing ok.";
+    is @{$a->{info}}, 1, "Number of infos.";
+    
+    #test non-existing session
+    $a=SlurmHC::Schroot::Session::run( run_dir => "/" , sessions=> "parZeErrors" );
+    is $a->{result}, 1, "Schroot::Session testing non-existing session.";
+    like $a->{warning}[0], qr/session.*not available/, "Warning message for non-existing session.";
+    like $a->{error}[0], qr/Defined sessions are unavailable and were not tested./, "Error message for non-existing session.";
+
+    
 };
